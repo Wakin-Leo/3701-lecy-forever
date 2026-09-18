@@ -1,4 +1,31 @@
 {
-  "categories": ["待读", "重要"],
-  "items": []
+  "categories": [
+    "待读",
+    "重要"
+  ],
+  "items": [
+    {
+      "doi": "10.1075/jlp.26036.zha",
+      "t": "The representation of English language learners in EFL textbooks in China",
+      "a": [
+        "Lili Zhang",
+        "David Machín"
+      ],
+      "d": "2026-09-17",
+      "j": "Journal of Language and Politics",
+      "oa": "closed",
+      "url": "https://doi.org/10.1075/jlp.26036.zha",
+      "k": [
+        "China",
+        "Autonomy",
+        "Narrative",
+        "Ideology",
+        "Representation (politics)",
+        "Competition (biology)",
+        "English language"
+      ],
+      "cat": "重要",
+      "ts": "2026-09-19 00:49"
+    }
+  ]
 }
