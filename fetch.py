@@ -23,8 +23,12 @@ from datetime import date, timedelta
 
 BASE = "https://api.openalex.org/works"
 MAILTO = "wakin-leo@users.noreply.github.com"  # OpenAlex polite pool
+UNPAYWALL = "https://api.unpaywall.org/v2/"
+UNPAYWALL_EMAIL = "zhan_leo@163.com"  # Unpaywall requires a contact email
 RECENT_DAYS = 10  # overlap window so late updates to recent records get merged
 # schema v2 (2026-09-18): records include best_oa_location.pdf_url as "pdf"
+# schema v3 (2026-09-18): pdf now also tries every OpenAlex location, then
+#                         Unpaywall as a fallback for non-closed works
 PER_PAGE = 200
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
@@ -33,7 +37,7 @@ DATA = os.path.join(ROOT, "data")
 SELECT = ",".join([
     "doi", "title", "publication_date", "authorships",
     "abstract_inverted_index", "open_access", "keywords", "type",
-    "best_oa_location",
+    "best_oa_location", "locations",
 ])
 
 
@@ -68,6 +72,18 @@ def reconstruct_abstract(inverted):
     return text.strip()
 
 
+def pdf_from_openalex(work):
+    """First pdf_url found in best_oa_location, then any other location."""
+    best = (work.get("best_oa_location") or {}).get("pdf_url")
+    if best:
+        return best
+    for loc in work.get("locations") or []:
+        url = (loc or {}).get("pdf_url")
+        if url:
+            return url
+    return ""
+
+
 def normalize(work):
     authors = [
         a.get("author", {}).get("display_name", "")
@@ -78,7 +94,6 @@ def normalize(work):
     kws = [k.get("display_name", "") for k in (work.get("keywords") or [])[:8]]
     kws = [k for k in kws if k]
     doi = work.get("doi") or ""
-    best_oa = work.get("best_oa_location") or {}
     return {
         "doi": doi.replace("https://doi.org/", ""),
         "t": work.get("title") or "",
@@ -87,9 +102,46 @@ def normalize(work):
         "abs": reconstruct_abstract(work.get("abstract_inverted_index")),
         "oa": oa.get("oa_status") or "closed",
         "url": oa.get("oa_url") or (("https://doi.org/" + doi.replace("https://doi.org/", "")) if doi else ""),
-        "pdf": best_oa.get("pdf_url") or "",
+        "pdf": pdf_from_openalex(work),
         "k": kws,
     }
+
+
+def unpaywall_pdf(doi):
+    """Ask Unpaywall for a pdf url; '' when none or on any failure."""
+    url = UNPAYWALL + urllib.parse.quote(doi) + "?email=" + urllib.parse.quote(UNPAYWALL_EMAIL)
+    try:
+        payload = http_get(url)
+    except Exception as exc:  # noqa: BLE001
+        print(f"  unpaywall lookup failed for {doi}: {exc}")
+        return ""
+    best = (payload.get("best_oa_location") or {}).get("url_for_pdf")
+    if best:
+        return best
+    for loc in payload.get("oa_locations") or []:
+        url = (loc or {}).get("url_for_pdf")
+        if url:
+            return url
+    return ""
+
+
+def enrich_pdfs(works):
+    """Fill empty pdf fields via Unpaywall (only for non-closed works)."""
+    todo = [w for w in works if not w["pdf"] and w["oa"] != "closed" and w["doi"]]
+    if not todo:
+        return 0
+    print(f"  unpaywall fallback for {len(todo)} works ...", flush=True)
+    filled = 0
+    for i, w in enumerate(todo):
+        pdf = unpaywall_pdf(w["doi"])
+        if pdf:
+            w["pdf"] = pdf
+            filled += 1
+        if (i + 1) % 100 == 0:
+            print(f"  unpaywall progress {i + 1}/{len(todo)}, filled {filled}", flush=True)
+        time.sleep(0.1)  # Unpaywall fair-use: stay well under 100k/day pacing
+    print(f"  unpaywall filled {filled}/{len(todo)}")
+    return filled
 
 
 def fetch_works(issns, from_date=None, to_date=None):
@@ -187,6 +239,7 @@ def main():
                 continue
             print(f"[backfill] {j['name']} ...", flush=True)
             works = [normalize(w) for w in fetch_works(j["issns"])]
+            enrich_pdfs(works)
             n = upsert_works(j["slug"], works)
             state["backfill_done"][j["slug"]] = True
             save_json(os.path.join(DATA, "state.json"), state)
@@ -199,6 +252,7 @@ def main():
                 continue  # backfill first
             print(f"[recent] {j['name']} (since {from_d}) ...", flush=True)
             works = [normalize(w) for w in fetch_works(j["issns"], from_date=from_d)]
+            enrich_pdfs(works)
             n = upsert_works(j["slug"], works)
             print(f"  -> {n} records merged")
 
