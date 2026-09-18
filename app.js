@@ -173,7 +173,7 @@
       : (w.oa ? '<div class="kws"><span class="kw">摘要缺失</span></div>' : "");
     var star = isFaved(w.doi) ? "★" : "☆";
     return '<div class="entry" style="--jc:' + color + '" data-doi="' + esc(w.doi) + '">' +
-      '<div class="entry-title">' + esc(w.t) + "</div>" +
+      '<div class="entry-title">' + esc(w.t) + '</div><div class="title-zh" hidden></div>' +
       '<div class="entry-meta"><span class="jtag"><span class="dot"></span>' + esc(journalName) + "</span>" +
       "<span>" + esc(w.a.join(", ")) + "</span>" +
       (w.oa ? '<span class="' + oaCls + '">' + esc(OA_LABEL[w.oa] || w.oa) + "</span>" : "") +
@@ -196,6 +196,7 @@
       html += entryHtml(w, w._j);
     });
     container.innerHTML = html;
+    translateTitles(container);
   }
 
   function passesFilters(w) {
@@ -728,6 +729,113 @@
     return { base: cfg.base, model: cfg.model, key: key };
   }
 
+  function trChat(cfg, prompt) {
+    return fetch(cfg.base, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Authorization": "Bearer " + cfg.key },
+      body: JSON.stringify({
+        model: cfg.model,
+        messages: [{ role: "user", content: prompt }],
+        temperature: 0.2
+      })
+    }).then(function (r) {
+      if (!r.ok) throw new Error("HTTP " + r.status);
+      return r.json();
+    }).then(function (d) {
+      var text = d.choices && d.choices[0] && d.choices[0].message && d.choices[0].message.content;
+      if (!text) throw new Error("返回内容为空");
+      return text.trim();
+    });
+  }
+
+  /* ----- title auto-translation (batched, cached in this browser) ----- */
+
+  var TITLE_ZH_KEY = "title_zh";
+  try { S.titleZh = JSON.parse(localStorage.getItem(TITLE_ZH_KEY) || "{}"); }
+  catch (e) { S.titleZh = {}; }
+  var titleInflight = {};
+
+  function persistTitleZh() {
+    try { localStorage.setItem(TITLE_ZH_KEY, JSON.stringify(S.titleZh)); } catch (e) { /* quota */ }
+  }
+
+  function fillTitleZh(entry, text) {
+    var el = entry.querySelector(".title-zh");
+    if (el) { el.textContent = text; el.hidden = false; }
+  }
+
+  function translateTitles(container) {
+    var sec = container.closest("section");
+    if (sec && sec.hidden) return;   // only translate what is on screen
+    container.querySelectorAll(".entry").forEach(function (entry) {
+      var zh = S.titleZh[entry.dataset.doi];
+      if (zh) fillTitleZh(entry, zh);
+    });
+    var cfg = trConfig();
+    if (!cfg.key) return;
+    var pending = [];
+    container.querySelectorAll(".entry").forEach(function (entry) {
+      var doi = entry.dataset.doi;
+      var w = S.workIndex[doi];
+      if (!w || S.titleZh[doi] || titleInflight[doi]) return;
+      titleInflight[doi] = true;
+      pending.push({ doi: doi, t: w.t });
+    });
+    var i = 0;
+    function finishBatch(batch) {
+      batch.forEach(function (b) { delete titleInflight[b.doi]; });
+    }
+    function nextBatch() {
+      if (i >= pending.length) return;
+      var batch = pending.slice(i, i + 10); i += 10;
+      var prompt = "把下列英文学术论文标题逐条翻译成简体中文，保持学术语气，专业术语准确。" +
+        "输出格式：每行一条译文，以原序号加英文句点开头（如 1. 译文），序号与输入一一对应，" +
+        "不要输出任何解释或其他内容。\n\n" +
+        batch.map(function (b, k) { return (k + 1) + ". " + b.t; }).join("\n");
+      trChat(cfg, prompt).then(function (text) {
+        var lines = text.split("\n");
+        batch.forEach(function (b, k) {
+          var zh = null;
+          for (var li = 0; li < lines.length; li++) {
+            var m = lines[li].match(/^\s*(\d+)\s*[.、)）:：]\s*(.+)$/);
+            if (m && parseInt(m[1], 10) === k + 1) { zh = m[2].trim(); break; }
+          }
+          if (!zh && lines.length === batch.length) {
+            zh = lines[k].replace(/^\s*\d+\s*[.、)）:：]\s*/, "").trim();
+          }
+          if (zh) {
+            S.titleZh[b.doi] = zh;
+            var entry = container.querySelector('.entry[data-doi="' + b.doi + '"]');
+            if (entry) fillTitleZh(entry, zh);
+          }
+        });
+        persistTitleZh();
+        finishBatch(batch);
+      }).catch(function () {
+        finishBatch(batch);   // allow retry on next render
+      }).then(function () {
+        setTimeout(nextBatch, 250);
+      });
+    }
+    nextBatch();
+  }
+
+  /* ----- abstract: sentence-by-sentence EN/ZH with term annotations ----- */
+
+  function parseInterleaved(text) {
+    var pairs = [], en = null;
+    text.split("\n").forEach(function (line) {
+      var mEn = line.match(/^\s*EN\s*[:：]\s*(.+)$/i);
+      var mZh = line.match(/^\s*ZH\s*[:：]\s*(.+)$/i);
+      if (mEn) { en = mEn[1].trim().replace(/^(abstract)\s*[:：]\s*/i, ""); }
+      else if (mZh && en) {
+        pairs.push({ en: en, zh: mZh[1].trim().replace(/^摘要\s*[:：]\s*/, "") });
+        en = null;
+      }
+    });
+    return pairs;
+  }
+
   function translateEntry(btn) {
     var entry = btn.closest(".entry");
     var box = entry.querySelector(".abs-zh");
@@ -742,25 +850,23 @@
     }
     btn.disabled = true;
     btn.textContent = "翻译中…";
-    var prompt = "你是学术翻译助手。把下面这篇论文的标题和摘要忠实翻译成简体中文，保持学术语气，专业术语准确。" +
-      "输出格式固定为两行：第一行以「标题：」开头，之后换行，第二段以「摘要：」开头。不要输出任何其他内容。\n\n" +
-      "Title: " + w.t + "\n\nAbstract: " + (w.abs || "");
-    fetch(cfg.base, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "Authorization": "Bearer " + cfg.key },
-      body: JSON.stringify({
-        model: cfg.model,
-        messages: [{ role: "user", content: prompt }],
-        temperature: 0.2
-      })
-    }).then(function (r) {
-      if (!r.ok) throw new Error("HTTP " + r.status);
-      return r.json();
-    }).then(function (d) {
-      var text = d.choices && d.choices[0] && d.choices[0].message && d.choices[0].message.content;
-      if (!text) throw new Error("返回内容为空");
-      w._zh = text.trim();
-      box.textContent = w._zh;
+    var prompt = "把下面的英文论文摘要逐句翻译。要求：\n" +
+      "1. 按原文句子顺序，先输出英文原句（保持原文不变），再输出它的中文翻译；\n" +
+      "2. 输出格式严格为每句两行：第一行以「EN: 」开头，第二行以「ZH: 」开头；\n" +
+      "3. 中文保持学术语气、术语准确；每句中文里最多挑选 2 个专业术语，在译文中以「中文（English）」的形式括注英文原词——每句绝不超过 2 个括注，宁可不注也不要超过，不要额外列术语表；\n" +
+      "4. 不要翻译标题，不要在译文中重复「Abstract/摘要」字样，不要输出任何解释或其他内容。\n\n" +
+      (w.abs || "");
+    trChat(cfg, prompt).then(function (text) {
+      var pairs = parseInterleaved(text);
+      if (pairs.length) {
+        w._zh = pairs.map(function (pr) {
+          return '<div class="iz-en">' + esc(pr.en) + '</div><div class="iz-zh">' + esc(pr.zh) + "</div>";
+        }).join("");
+        box.innerHTML = w._zh;
+      } else {
+        w._zh = esc(text);
+        box.textContent = text;
+      }
       box.hidden = false;
       btn.textContent = "收起译文";
     }).catch(function (e) {

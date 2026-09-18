@@ -291,3 +291,9 @@ button.danger:hover { border-color: #a4362e; }
 .doi-line a { color: var(--muted); text-decoration: none; border-bottom: 1px dotted var(--muted); }
 .doi-line a:hover { color: var(--accent); border-bottom-color: var(--accent); }
 .entry-title { cursor: default; }
+.title-zh { font-size: 13.5px; color: var(--muted); margin-top: 3px; line-height: 1.55; }
+
+/* ---------- interleaved translation ---------- */
+.iz-en { color: var(--muted); font-size: 12.5px; line-height: 1.6; margin-top: 10px; }
+.iz-zh { color: var(--ink); font-size: 13.5px; line-height: 1.7; margin-top: 2px; text-align: justify; }
+.iz-en:first-child { margin-top: 2px; }
