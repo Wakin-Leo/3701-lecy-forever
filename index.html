@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>Daily Digest</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div id="gate">
+  <form id="gate-form" autocomplete="off">
+    <div class="gate-box">
+      <div class="gate-title">Daily Digest</div>
+      <input type="password" id="gate-input" placeholder="口令" required>
+      <button type="submit">进入</button>
+      <div id="gate-err"></div>
+    </div>
+  </form>
+</div>
+
+<div id="app" hidden>
+  <header>
+    <div class="wrap header-row">
+      <h1 id="site-title">Daily Digest</h1>
+      <nav>
+        <a href="#latest" data-route="latest">最新</a>
+        <a href="#archive" data-route="archive">回溯</a>
+        <a href="#admin" data-route="admin">期刊管理</a>
+      </nav>
+    </div>
+    <div class="wrap" id="updated-line"></div>
+  </header>
+
+  <main class="wrap">
+    <section id="view-latest" hidden>
+      <div class="toolbar">
+        <input type="search" id="search" placeholder="搜索标题 / 摘要 / 关键词…">
+        <label class="oa-toggle"><input type="checkbox" id="oa-only"> 仅看 OA</label>
+      </div>
+      <div id="journal-chips" class="chips"></div>
+      <div id="latest-list"></div>
+    </section>
+
+    <section id="view-archive" hidden>
+      <div class="toolbar">
+        <select id="arc-journal"></select>
+        <select id="arc-year"></select>
+      </div>
+      <div id="archive-list"></div>
+    </section>
+
+    <section id="view-admin" hidden>
+      <h2>期刊管理</h2>
+      <p class="muted">增删期刊后点"保存到仓库"，系统会在下一次自动运行时完成抓取；新增期刊会自动回溯全部历史题录。</p>
+
+      <div class="admin-block">
+        <h3>GitHub 令牌</h3>
+        <p class="muted">首次使用需填入一个 GitHub fine-grained token（仅授予本仓库 Contents 读写权限）。令牌只保存在您自己的浏览器里。</p>
+        <div class="row">
+          <input type="password" id="gh-token" placeholder="github_pat_…">
+          <button id="save-token">保存令牌</button>
+        </div>
+      </div>
+
+      <div class="admin-block">
+        <h3>当前期刊 <span id="journal-count" class="muted"></span></h3>
+        <table id="journal-table"><tbody></tbody></table>
+      </div>
+
+      <div class="admin-block">
+        <h3>添加期刊</h3>
+        <div class="row">
+          <input type="search" id="add-query" placeholder="输入刊名（不必精确）">
+          <button id="add-search">查询</button>
+        </div>
+        <div id="add-results"></div>
+      </div>
+
+      <div class="admin-block">
+        <button id="commit-journals" class="primary">保存到仓库</button>
+        <span id="commit-status" class="muted"></span>
+      </div>
+
+      <div class="admin-block">
+        <h3>修改进站口令</h3>
+        <div class="row">
+          <input type="password" id="new-pass" placeholder="新口令">
+          <button id="change-pass">修改</button>
+        </div>
+        <span id="pass-status" class="muted"></span>
+      </div>
+    </section>
+  </main>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
