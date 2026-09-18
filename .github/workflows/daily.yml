@@ -1,0 +1,37 @@
+name: digest
+
+on:
+  schedule:
+    # 06:17 Beijing time daily
+    - cron: "17 22 * * *"
+  workflow_dispatch:
+  push:
+    paths:
+      - journals.json
+      - fetch.py
+      - .github/workflows/daily.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: digest
+  cancel-in-progress: false
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: fetch metadata
+        run: python fetch.py all
+      - name: commit data
+        run: |
+          git config user.name "digest-bot"
+          git config user.email "digest-bot@users.noreply.github.com"
+          git add data
+          git diff --cached --quiet || git commit -m "data: update $(date -u +%F)"
+          git push
