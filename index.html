@@ -30,6 +30,8 @@
       <nav>
         <a href="#latest" data-route="latest">最新</a>
         <a href="#archive" data-route="archive">回溯</a>
+        <a href="#favs" data-route="favs">收藏</a>
+        <a href="#notes" data-route="notes">笔记</a>
         <a href="#admin" data-route="admin">期刊管理</a>
       </nav>
     </div>
@@ -45,6 +47,16 @@
       <div id="journal-chips" class="chips"></div>
       <div id="stats" class="stats-line"></div>
       <div id="latest-list"></div>
+
+      <div id="diary" class="diary-block">
+        <h2>小黄豆罐头日志</h2>
+        <textarea id="diary-input" rows="3" placeholder="今天想往罐头里存点什么…"></textarea>
+        <div class="diary-actions">
+          <button id="diary-save" class="primary">存入罐头</button>
+          <span id="diary-status" class="muted"></span>
+        </div>
+        <div id="diary-list"></div>
+      </div>
     </section>
 
     <section id="view-archive" hidden>
@@ -55,13 +67,23 @@
       <div id="archive-list"></div>
     </section>
 
+    <section id="view-favs" hidden>
+      <div id="fav-chips" class="chips"></div>
+      <div id="fav-list"></div>
+    </section>
+
+    <section id="view-notes" hidden>
+      <p class="muted">此处展示您的划线笔记；同一份内容也自动保存在仓库的 <code>notes/摘要笔记.md</code> 文件中。</p>
+      <div id="notes-list"></div>
+    </section>
+
     <section id="view-admin" hidden>
       <h2>期刊管理</h2>
       <p class="muted">增删期刊后点"保存到仓库"，系统会在下一次自动运行时完成抓取；新增期刊会自动回溯全部历史题录。</p>
 
       <div class="admin-block">
         <h3>GitHub 令牌</h3>
-        <p class="muted">令牌用于把期刊清单写回仓库，只保存在您自己的浏览器里，不经过任何第三方。</p>
+        <p class="muted">令牌用于把期刊清单、收藏、笔记和日志写回仓库，只保存在您自己的浏览器里，不经过任何第三方。</p>
         <details>
           <summary>如何创建一个令牌（约 1 分钟）</summary>
           <ol>
@@ -108,6 +130,10 @@
     </section>
   </main>
 </div>
+
+<button id="hl-btn" hidden>✎ 保存划线</button>
+<div id="fav-picker" hidden></div>
+<div id="toast" hidden></div>
 
 <script src="app.js"></script>
 </body>
