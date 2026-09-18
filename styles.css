@@ -44,7 +44,7 @@ a { color: var(--accent); }
   font-family: var(--serif); font-size: 22px; line-height: 42px;
 }
 .gate-title {
-  font-family: var(--serif); font-size: 21px; letter-spacing: .14em;
+  font-family: var(--serif); font-size: 17px; letter-spacing: .1em;
   text-transform: uppercase; margin-bottom: 6px;
 }
 .gate-sub { font-size: 12px; color: var(--muted); margin-bottom: 24px; letter-spacing: .05em; }
@@ -298,7 +298,7 @@ button.danger:hover { border-color: #a4362e; }
   box-shadow: var(--shadow-hover); transition: transform .18s, box-shadow .18s;
 }
 .big-btn:hover { transform: translateY(-3px); box-shadow: 0 6px 16px rgba(38,40,46,.12), 0 18px 44px rgba(38,40,46,.14); }
-.big-btn .bb-title { font-family: var(--serif); font-size: 30px; letter-spacing: .08em; }
+.big-btn .bb-title { font-family: var(--serif); font-size: 26px; letter-spacing: .06em; text-align: center; }
 .big-btn .bb-sub { margin-top: 10px; font-size: 13px; opacity: .75; letter-spacing: .12em; }
 .big-btn.bean { background: #b98a2f; }
 
