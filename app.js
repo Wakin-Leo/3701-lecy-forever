@@ -3,19 +3,27 @@
   "use strict";
 
   var REPO = "Wakin-Leo/3701-lecy-forever";
+  var API = "https://api.github.com/repos/" + REPO + "/contents/";
   var RECENT_WINDOW_DAYS = 30;
   var PALETTE = ["#1f3a5f", "#8c2f39", "#2f6f4f", "#7a5c1e", "#5b3a8c",
                  "#a34a1f", "#1e6e7a", "#6d3b5e", "#45526b", "#3f6212"];
+  var ROUTES = ["latest", "archive", "favs", "notes", "admin"];
 
   var S = {
     config: null,
     manifest: null,
     shardCache: {},   // "slug/year" -> array
     jColor: {},       // slug -> color
-    activeJournals: null, // Set of slugs; null = all
+    workIndex: {},    // doi -> work (with _j journal name)
+    favs: { categories: ["待读", "重要"], items: [] },
+    highlights: { items: [] },
+    diary: { items: [] },
+    favCat: null,     // active category filter in favs view
+    activeJournals: null,
     query: "",
     oaOnly: false,
-    adminList: null
+    adminList: null,
+    route: "latest"
   };
 
   function $(id) { return document.getElementById(id); }
@@ -23,6 +31,22 @@
     return String(s == null ? "" : s)
       .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
       .replace(/"/g, "&quot;");
+  }
+  function nowStr() {
+    var d = new Date();
+    function p(n) { return ("0" + n).slice(-2); }
+    return d.getFullYear() + "-" + p(d.getMonth() + 1) + "-" + p(d.getDate()) +
+           " " + p(d.getHours()) + ":" + p(d.getMinutes());
+  }
+
+  /* ---------- toast ---------- */
+  var toastTimer = null;
+  function toast(msg, sticky) {
+    var t = $("toast");
+    t.textContent = msg;
+    t.hidden = false;
+    if (toastTimer) clearTimeout(toastTimer);
+    if (!sticky) toastTimer = setTimeout(function () { t.hidden = true; }, 2600);
   }
 
   /* ---------- gate ---------- */
@@ -60,7 +84,7 @@
     boot();
   }
 
-  /* ---------- data ---------- */
+  /* ---------- plain data reads ---------- */
 
   function fetchJson(path) {
     return fetch(path + (path.indexOf("?") < 0 ? "?" : "&") + "t=" + Date.now())
@@ -76,15 +100,58 @@
     }).catch(function () { return []; });
   }
 
-  /* ---------- rendering ---------- */
+  function loadUserJson(name, fallback) {
+    return fetchJson("user/" + name + ".json").catch(function () { return fallback; });
+  }
+
+  /* ---------- GitHub write helpers (token in localStorage) ---------- */
+
+  function ghHeaders() {
+    return {
+      "Authorization": "Bearer " + (localStorage.getItem("gh_token") || ""),
+      "Accept": "application/vnd.github+json"
+    };
+  }
+  function requireToken() {
+    if (localStorage.getItem("gh_token")) return true;
+    toast("请先到「期刊管理」页保存 GitHub 令牌");
+    return false;
+  }
+  function ghGetFile(path) {
+    return fetch(API + encodeURI(path), { headers: ghHeaders() }).then(function (r) {
+      if (r.status === 404) return null;
+      if (!r.ok) throw new Error("读取失败 " + r.status);
+      return r.json();
+    });
+  }
+  function decodeFile(f) {
+    return JSON.parse(decodeURIComponent(escape(atob(f.content.replace(/\n/g, "")))));
+  }
+  function b64(s) { return btoa(unescape(encodeURIComponent(s))); }
+  function ghPutRaw(path, text, sha, message) {
+    var body = { message: message, content: b64(text) };
+    if (sha) body.sha = sha;
+    return fetch(API + encodeURI(path), {
+      method: "PUT", headers: ghHeaders(), body: JSON.stringify(body)
+    }).then(function (r) {
+      if (!r.ok) throw new Error("写入失败 " + r.status);
+      return r.json();
+    });
+  }
+
+  /* ---------- entry rendering ---------- */
 
   var OA_LABEL = { gold: "OA · Gold", hybrid: "OA · Hybrid", green: "OA · Green", bronze: "OA · Bronze", closed: "闭源" };
+
+  function isFaved(doi) {
+    return S.favs.items.some(function (x) { return x.doi === doi; });
+  }
 
   function entryHtml(w, journalName) {
     var doiUrl = "https://doi.org/" + w.doi;
     var color = S.jColor[w._slug] || "var(--line)";
     var oaCls = w.oa === "closed" ? "oa-badge closed" : "oa-badge";
-    var fulltext = (w.oa !== "closed" && w.url && w.url !== doiUrl)
+    var fulltext = (w.oa && w.oa !== "closed" && w.url && w.url !== doiUrl)
       ? ' · <a href="' + esc(w.url) + '" target="_blank" rel="noopener">全文</a>' : "";
     var kws = (w.k && w.k.length)
       ? '<div class="kws">' + w.k.map(function (k) { return '<span class="kw">' + esc(k) + "</span>"; }).join("") + "</div>"
@@ -92,12 +159,16 @@
     var abs = w.abs
       ? '<details class="abs"><summary>摘要</summary><p>' + esc(w.abs) + "</p>" +
         '<div class="abs-zh" hidden></div><button class="tr-btn">翻译摘要</button></details>'
-      : '<div class="kws"><span class="kw">摘要缺失 · <a href="' + esc(doiUrl) + '" target="_blank" rel="noopener">查看原文页</a></span></div>';
-    return '<div class="entry" style="--jc:' + color + '">' +
+      : (w.oa ? '<div class="kws"><span class="kw">摘要缺失 · <a href="' + esc(doiUrl) + '" target="_blank" rel="noopener">查看原文页</a></span></div>' : "");
+    var star = isFaved(w.doi) ? "★" : "☆";
+    return '<div class="entry" style="--jc:' + color + '" data-doi="' + esc(w.doi) + '">' +
       '<div class="entry-title"><a href="' + esc(doiUrl) + '" target="_blank" rel="noopener">' + esc(w.t) + "</a></div>" +
       '<div class="entry-meta"><span class="jtag"><span class="dot"></span>' + esc(journalName) + "</span>" +
       "<span>" + esc(w.a.join(", ")) + "</span>" +
-      '<span class="' + oaCls + '">' + esc(OA_LABEL[w.oa] || w.oa) + "</span>" + fulltext + "</div>" +
+      (w.oa ? '<span class="' + oaCls + '">' + esc(OA_LABEL[w.oa] || w.oa) + "</span>" : "") +
+      fulltext +
+      '<button class="fav-btn' + (isFaved(w.doi) ? " faved" : "") + '" data-doi="' + esc(w.doi) +
+      '" title="收藏">' + star + "</button></div>" +
       kws + abs + "</div>";
   }
 
@@ -105,11 +176,13 @@
     if (!list.length) { container.innerHTML = '<div class="empty">没有符合条件的记录</div>'; return; }
     var html = "", lastDate = "";
     list.forEach(function (w) {
+      w._j = journalMap[w._slug] || w.j || "";
+      S.workIndex[w.doi] = w;
       if (w.d !== lastDate) {
         lastDate = w.d;
         html += '<div class="date-head">' + esc(w.d) + "</div>";
       }
-      html += entryHtml(w, journalMap[w._slug] || "");
+      html += entryHtml(w, w._j);
     });
     container.innerHTML = html;
   }
@@ -118,7 +191,7 @@
     if (S.activeJournals && !S.activeJournals.has(w._slug)) return false;
     if (S.oaOnly && w.oa === "closed") return false;
     if (S.query) {
-      var hay = (w.t + " " + w.abs + " " + w.k.join(" ")).toLowerCase();
+      var hay = (w.t + " " + (w.abs || "") + " " + (w.k || []).join(" ")).toLowerCase();
       if (hay.indexOf(S.query) < 0) return false;
     }
     return true;
@@ -221,31 +294,228 @@
     });
   }
 
+  /* ---------- favorites ---------- */
+
+  function saveFavsToRepo() {
+    return ghGetFile("user/favorites.json").then(function (f) {
+      return ghPutRaw("user/favorites.json", JSON.stringify(S.favs, null, 2),
+        f && f.sha, "fav: update");
+    });
+  }
+
+  function addFav(doi, cat) {
+    var w = S.workIndex[doi];
+    if (!w) { toast("找不到该条目数据"); return; }
+    if (S.favs.categories.indexOf(cat) < 0) S.favs.categories.push(cat);
+    var existing = S.favs.items.filter(function (x) { return x.doi === doi; })[0];
+    if (existing) existing.cat = cat;
+    else S.favs.items.unshift({
+      doi: doi, t: w.t, a: w.a, d: w.d, j: w._j || "",
+      oa: w.oa || "closed", url: w.url || "", k: w.k || [],
+      cat: cat, ts: nowStr()
+    });
+    toast("保存中…", true);
+    saveFavsToRepo().then(function () {
+      toast("已收藏到「" + cat + "」");
+      refreshFavUi();
+    }).catch(function (e) { toast("保存失败：" + e.message); });
+  }
+
+  function removeFav(doi) {
+    S.favs.items = S.favs.items.filter(function (x) { return x.doi !== doi; });
+    toast("保存中…", true);
+    saveFavsToRepo().then(function () {
+      toast("已取消收藏");
+      refreshFavUi();
+    }).catch(function (e) { toast("保存失败：" + e.message); });
+  }
+
+  function refreshFavUi() {
+    document.querySelectorAll(".fav-btn").forEach(function (b) {
+      var f = isFaved(b.dataset.doi);
+      b.textContent = f ? "★" : "☆";
+      b.classList.toggle("faved", f);
+    });
+    if (S.route === "favs") renderFavs();
+  }
+
+  function openFavPicker(btn) {
+    var pk = $("fav-picker");
+    var doi = btn.dataset.doi;
+    if (isFaved(doi)) { removeFav(doi); return; }
+    pk.dataset.doi = doi;
+    var html = '<div class="fp-title">收藏到分类…</div>';
+    S.favs.categories.forEach(function (c) {
+      html += '<button class="fp-cat" data-cat="' + esc(c) + '">' + esc(c) + "</button>";
+    });
+    html += '<div class="fp-new"><input id="fp-input" placeholder="新分类名"><button id="fp-add">添加</button></div>';
+    pk.innerHTML = html;
+    var r = btn.getBoundingClientRect();
+    pk.style.left = Math.max(8, r.left + window.scrollX - 40) + "px";
+    pk.style.top = (r.bottom + window.scrollY + 6) + "px";
+    pk.hidden = false;
+    var inp = $("fp-input");
+    if (inp) inp.focus();
+  }
+
+  /* ---------- favorites view ---------- */
+
+  function renderFavChips() {
+    var box = $("fav-chips");
+    box.innerHTML = "";
+    var counts = {};
+    S.favs.items.forEach(function (x) { counts[x.cat] = (counts[x.cat] || 0) + 1; });
+    var all = document.createElement("button");
+    all.className = "chip" + (!S.favCat ? " on" : "");
+    all.textContent = "全部（" + S.favs.items.length + "）";
+    all.onclick = function () { S.favCat = null; renderFavs(); };
+    box.appendChild(all);
+    S.favs.categories.forEach(function (c) {
+      if (!counts[c]) return;
+      var b = document.createElement("button");
+      b.className = "chip" + (S.favCat === c ? " on" : "");
+      b.textContent = c + "（" + counts[c] + "）";
+      b.onclick = function () { S.favCat = c; renderFavs(); };
+      box.appendChild(b);
+    });
+  }
+
+  function renderFavs() {
+    renderFavChips();
+    var box = $("fav-list");
+    var items = S.favs.items.filter(function (x) { return !S.favCat || x.cat === S.favCat; });
+    if (!items.length) {
+      box.innerHTML = '<div class="empty">还没有收藏。浏览条目时点右侧的 ☆ 即可收藏。</div>';
+      return;
+    }
+    var html = "", lastCat = "";
+    items.forEach(function (x) {
+      if (!S.favCat && x.cat !== lastCat) {
+        lastCat = x.cat;
+        html += '<div class="date-head">' + esc(x.cat) + "</div>";
+      }
+      html += entryHtml({ doi: x.doi, t: x.t, a: x.a, d: x.d, oa: x.oa, url: x.url, k: x.k, abs: "" }, x.j);
+    });
+    box.innerHTML = html;
+  }
+
+  /* ---------- highlights ---------- */
+
+  function citeLine(x) {
+    return x.a.join(", ") + " (" + x.d + "). " + x.t + ". *" + x.j + "*. https://doi.org/" + x.doi;
+  }
+
+  function notesMd() {
+    var parts = ["# 摘要笔记", "",
+      "> 本文件由 Daily Digest 自动生成与维护：每条划线按「题录信息 → 划线内容」排列。", ""];
+    var seen = [], dois = [];
+    S.highlights.items.slice().reverse().forEach(function (h) {
+      if (seen.indexOf(h.doi) < 0) { seen.push(h.doi); dois.push(h.doi); }
+    });
+    dois.forEach(function (doi) {
+      var hs = S.highlights.items.filter(function (h) { return h.doi === doi; });
+      parts.push("---", "", "## " + citeLine(hs[0]), "");
+      hs.forEach(function (h) {
+        parts.push("> " + h.text.replace(/\s+/g, " ").trim(), "");
+        parts.push("<sub>划线于 " + h.ts + "</sub>", "");
+      });
+    });
+    return parts.join("\n");
+  }
+
+  function saveHighlight(doi, text) {
+    if (!requireToken()) return;
+    var w = S.workIndex[doi];
+    if (!w) { toast("找不到该条目数据"); return; }
+    text = text.replace(/\s+/g, " ").trim();
+    if (!text) return;
+    toast("保存中…", true);
+    ghGetFile("user/highlights.json").then(function (f) {
+      var hl = f ? decodeFile(f) : { items: [] };
+      hl.items.push({ doi: doi, t: w.t, a: w.a, d: w.d, j: w._j || "", text: text, ts: nowStr() });
+      S.highlights = hl;
+      return ghGetFile("notes/摘要笔记.md").then(function (f2) {
+        return ghPutRaw("user/highlights.json", JSON.stringify(hl, null, 2), f && f.sha, "note: add highlight")
+          .then(function () {
+            return ghPutRaw("notes/摘要笔记.md", notesMd(), f2 && f2.sha, "note: sync 摘要笔记");
+          });
+      });
+    }).then(function () {
+      toast("已存入摘要笔记");
+      if (S.route === "notes") renderNotes();
+    }).catch(function (e) { toast("保存失败：" + e.message); });
+  }
+
+  function renderNotes() {
+    var box = $("notes-list");
+    if (!S.highlights.items.length) {
+      box.innerHTML = '<div class="empty">还没有划线笔记。在条目摘要里选中一段文字，点「保存划线」即可。</div>';
+      return;
+    }
+    var seen = [], dois = [];
+    S.highlights.items.slice().reverse().forEach(function (h) {
+      if (seen.indexOf(h.doi) < 0) { seen.push(h.doi); dois.push(h.doi); }
+    });
+    var html = "";
+    dois.forEach(function (doi) {
+      var hs = S.highlights.items.filter(function (h) { return h.doi === doi; });
+      var x = hs[0];
+      html += '<div class="note-work"><div class="note-cite">' +
+        esc(x.a.join(", ")) + " (" + esc(x.d) + '). <a href="https://doi.org/' + esc(x.doi) +
+        '" target="_blank" rel="noopener">' + esc(x.t) + "</a>. <i>" + esc(x.j) + "</i>.</div>";
+      hs.forEach(function (h) {
+        html += '<div class="note-quote">' + esc(h.text) +
+          '<span class="nq-time">划线于 ' + esc(h.ts) + "</span></div>";
+      });
+      html += "</div>";
+    });
+    box.innerHTML = html;
+  }
+
+  /* ---------- diary ---------- */
+
+  function diaryMd() {
+    var parts = ["# 小黄豆罐头日志", "", "> 由 Daily Digest 自动维护。", ""];
+    S.diary.items.forEach(function (x) {
+      parts.push("## " + x.ts, "", x.text, "");
+    });
+    return parts.join("\n");
+  }
+
+  function renderDiary() {
+    var box = $("diary-list");
+    if (!S.diary.items.length) { box.innerHTML = ""; return; }
+    box.innerHTML = S.diary.items.map(function (x) {
+      return '<div class="diary-entry"><div class="de-time">' + esc(x.ts) +
+        '</div><div class="de-text">' + esc(x.text) + "</div></div>";
+    }).join("");
+  }
+
+  function saveDiary() {
+    var ta = $("diary-input");
+    var text = ta.value.trim();
+    if (!text) { toast("先写点内容再存"); return; }
+    if (!requireToken()) return;
+    toast("保存中…", true);
+    ghGetFile("user/diary.json").then(function (f) {
+      var dj = f ? decodeFile(f) : { items: [] };
+      dj.items.unshift({ ts: nowStr(), text: text });
+      S.diary = dj;
+      return ghGetFile("notes/小黄豆罐头日志.md").then(function (f2) {
+        return ghPutRaw("user/diary.json", JSON.stringify(dj, null, 2), f && f.sha, "diary: add entry")
+          .then(function () {
+            return ghPutRaw("notes/小黄豆罐头日志.md", diaryMd(), f2 && f2.sha, "diary: sync 日志");
+          });
+      });
+    }).then(function () {
+      ta.value = "";
+      $("diary-status").textContent = "";
+      renderDiary();
+      toast("已存入罐头");
+    }).catch(function (e) { toast("保存失败：" + e.message); });
+  }
+
   /* ---------- admin ---------- */
-
-  function ghHeaders() {
-    return {
-      "Authorization": "Bearer " + (localStorage.getItem("gh_token") || ""),
-      "Accept": "application/vnd.github+json"
-    };
-  }
-
-  function ghGetSha(path) {
-    return fetch("https://api.github.com/repos/" + REPO + "/contents/" + path, { headers: ghHeaders() })
-      .then(function (r) { if (!r.ok) throw new Error("读取失败 " + r.status); return r.json(); })
-      .then(function (j) { return j.sha; });
-  }
-
-  function ghPut(path, obj, sha, message) {
-    var body = {
-      message: message,
-      content: btoa(unescape(encodeURIComponent(JSON.stringify(obj, null, 2)))),
-      sha: sha
-    };
-    return fetch("https://api.github.com/repos/" + REPO + "/contents/" + path, {
-      method: "PUT", headers: ghHeaders(), body: JSON.stringify(body)
-    }).then(function (r) { if (!r.ok) throw new Error("写入失败 " + r.status); return r.json(); });
-  }
 
   function renderAdminTable() {
     var tb = $("journal-table").querySelector("tbody");
@@ -277,7 +547,7 @@
     tok.value = localStorage.getItem("gh_token") || "";
     $("save-token").onclick = function () {
       localStorage.setItem("gh_token", tok.value.trim());
-      alert("令牌已保存到本浏览器");
+      toast("令牌已保存到本浏览器");
     };
 
     $("add-search").onclick = function () {
@@ -320,10 +590,11 @@
 
     $("commit-journals").onclick = function () {
       var st = $("commit-status");
-      if (!localStorage.getItem("gh_token")) { st.textContent = "请先保存 GitHub 令牌"; return; }
+      if (!requireToken()) { st.textContent = "请先保存 GitHub 令牌"; return; }
       st.textContent = "写入中…";
-      ghGetSha("journals.json").then(function (sha) {
-        return ghPut("journals.json", { journals: S.adminList }, sha, "journals: update watchlist");
+      ghGetFile("journals.json").then(function (f) {
+        return ghPutRaw("journals.json", JSON.stringify({ journals: S.adminList }, null, 2),
+          f && f.sha, "journals: update watchlist");
       }).then(function () {
         st.textContent = "已保存。后台任务会在下一次运行时生效；新增期刊的历史回溯完成后即出现在网站上。";
       }).catch(function (e) {
@@ -335,12 +606,12 @@
       var np = $("new-pass").value;
       var st = $("pass-status");
       if (np.length < 6) { st.textContent = "口令至少 6 位"; return; }
-      if (!localStorage.getItem("gh_token")) { st.textContent = "请先保存 GitHub 令牌"; return; }
+      if (!requireToken()) { st.textContent = "请先保存 GitHub 令牌"; return; }
       sha256Hex(np).then(function (h) {
-        return ghGetSha("site-config.json").then(function (sha) {
+        return ghGetFile("site-config.json").then(function (f) {
           var cfg = JSON.parse(JSON.stringify(S.config));
           cfg.password_sha256 = h;
-          return ghPut("site-config.json", cfg, sha, "config: rotate passphrase");
+          return ghPutRaw("site-config.json", JSON.stringify(cfg, null, 2), f && f.sha, "config: rotate passphrase");
         });
       }).then(function () {
         st.textContent = "已修改，下次进站生效。";
@@ -349,27 +620,89 @@
     };
   }
 
-  /* ---------- translate stub ---------- */
+  /* ---------- global event delegation ---------- */
 
   document.addEventListener("click", function (e) {
-    if (!e.target.classList || !e.target.classList.contains("tr-btn")) return;
-    e.target.textContent = "翻译功能尚未启用";
-    setTimeout(function () { e.target.textContent = "翻译摘要"; }, 2000);
+    var t = e.target;
+
+    // translate stub
+    if (t.classList && t.classList.contains("tr-btn")) {
+      t.textContent = "翻译功能尚未启用";
+      setTimeout(function () { t.textContent = "翻译摘要"; }, 2000);
+      return;
+    }
+
+    // favorite star
+    if (t.classList && t.classList.contains("fav-btn")) {
+      openFavPicker(t);
+      return;
+    }
+
+    // picker category chosen
+    if (t.classList && t.classList.contains("fp-cat")) {
+      var pk = $("fav-picker");
+      if (!requireToken()) { pk.hidden = true; return; }
+      addFav(pk.dataset.doi, t.dataset.cat);
+      pk.hidden = true;
+      return;
+    }
+    if (t.id === "fp-add") {
+      var pk2 = $("fav-picker");
+      var name = $("fp-input").value.trim();
+      if (name) {
+        if (!requireToken()) { pk2.hidden = true; return; }
+        addFav(pk2.dataset.doi, name);
+      }
+      pk2.hidden = true;
+      return;
+    }
+
+    // click elsewhere closes picker
+    var pk3 = $("fav-picker");
+    if (!pk3.hidden && !(t.closest && t.closest("#fav-picker"))) pk3.hidden = true;
   });
+
+  // highlight selection
+  document.addEventListener("mouseup", function () {
+    setTimeout(function () {
+      var btn = $("hl-btn");
+      var sel = window.getSelection();
+      if (!sel || sel.isCollapsed || !String(sel).trim()) { btn.hidden = true; return; }
+      var node = sel.anchorNode && (sel.anchorNode.nodeType === 1 ? sel.anchorNode : sel.anchorNode.parentElement);
+      var entry = node && node.closest ? node.closest(".entry") : null;
+      if (!entry || !entry.dataset.doi) { btn.hidden = true; return; }
+      var rect = sel.getRangeAt(0).getBoundingClientRect();
+      btn.style.left = Math.max(8, rect.left + window.scrollX) + "px";
+      btn.style.top = (rect.bottom + window.scrollY + 6) + "px";
+      btn.dataset.doi = entry.dataset.doi;
+      btn.hidden = false;
+    }, 10);
+  });
+  $("hl-btn").addEventListener("click", function () {
+    var sel = window.getSelection();
+    var text = sel ? String(sel) : "";
+    var doi = this.dataset.doi;
+    this.hidden = true;
+    if (sel) sel.removeAllRanges();
+    saveHighlight(doi, text);
+  });
+
+  $("diary-save").addEventListener("click", saveDiary);
 
   /* ---------- routing & boot ---------- */
 
   function route() {
     var r = (location.hash || "#latest").slice(1);
-    if (["latest", "archive", "admin"].indexOf(r) < 0) r = "latest";
-    ["latest", "archive", "admin"].forEach(function (v) {
-      $("view-" + v).hidden = v !== r;
-    });
+    if (ROUTES.indexOf(r) < 0) r = "latest";
+    S.route = r;
+    ROUTES.forEach(function (v) { $("view-" + v).hidden = v !== r; });
     document.querySelectorAll("nav a").forEach(function (a) {
       a.classList.toggle("active", a.dataset.route === r);
     });
     if (r === "latest") renderLatest();
     if (r === "archive") renderArchive();
+    if (r === "favs") renderFavs();
+    if (r === "notes") renderNotes();
     if (r === "admin" && !S.adminList) initAdmin();
   }
 
@@ -389,6 +722,16 @@
       $("oa-only").addEventListener("change", function () {
         S.oaOnly = this.checked;
         renderLatest(); renderArchive();
+      });
+      // load user data (public reads)
+      loadUserJson("favorites", S.favs).then(function (d) {
+        if (d && d.items) S.favs = d;
+      });
+      loadUserJson("highlights", S.highlights).then(function (d) {
+        if (d && d.items) S.highlights = d;
+      });
+      loadUserJson("diary", S.diary).then(function (d) {
+        if (d && d.items) { S.diary = d; renderDiary(); }
       });
       window.addEventListener("hashchange", route);
       route();
