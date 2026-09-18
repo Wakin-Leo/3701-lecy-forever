@@ -207,7 +207,7 @@
       '<div class="entry-meta"><span class="jtag"><span class="dot"></span>' + esc(journalName) + "</span>" +
       "<span>" + esc(w.a.join(", ")) + "</span>" +
       (w.oa ? '<span class="' + oaCls + '">' + esc(OA_LABEL[w.oa] || w.oa) + "</span>" : "") +
-      '<button class="cite-btn" data-doi="' + esc(w.doi) + '" title="复制 APA 引文">引文</button>' +
+      '<button class="cite-btn" data-doi="' + esc(w.doi) + '" title="复制 APA 引文">APA</button>' +
       '<button class="fav-btn' + (isFaved(w.doi) ? " faved" : "") + '" data-doi="' + esc(w.doi) +
       '" title="收藏">' + star + "</button></div>" +
       '<div class="doi-line">DOI：<a href="' + esc(doiUrl) + '" target="_blank" rel="noopener">' + esc(w.doi) + "</a>" +
@@ -1181,6 +1181,7 @@
     var box = entry.querySelector(".abs-zh");
     var w = S.workIndex[entry.dataset.doi];
     if (!w) return;
+    if (!isRead(entry.dataset.doi)) setRead(entry.dataset.doi, true);
     if (w._zh) { box.hidden = !box.hidden; btn.textContent = box.hidden ? "翻译摘要" : "收起译文"; return; }
     var cfg = trConfig();
     if (!cfg.key) {
