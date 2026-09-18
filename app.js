@@ -33,6 +33,7 @@
     diary: { items: [] },
     annis: { items: [] },
     works: { items: [] },
+    read: { items: [] },
     beanInit: false,
     favCat: null,     // active category filter in favs view
     activeJournals: null,
@@ -135,7 +136,7 @@
   }
   function ghGetFile(path) {
     return fetch(API + encodeURI(path), { headers: ghHeaders() }).then(function (r) {
-      if (r.status === 404) return null;
+      if (r.status === 404) return r.text().then(function () { return null; });
       if (!r.ok) throw new Error("读取失败 " + r.status);
       return r.json();
     });
@@ -182,6 +183,10 @@
     return S.favs.items.some(function (x) { return x.doi === doi; });
   }
 
+  function isRead(doi) {
+    return S.read.items.indexOf(doi) >= 0;
+  }
+
   function entryHtml(w, journalName) {
     var doiUrl = "https://doi.org/" + w.doi;
     var color = S.jColor[w._slug] || "var(--line)";
@@ -194,14 +199,20 @@
         '<div class="abs-zh" hidden></div><button class="tr-btn">翻译摘要</button></details>'
       : (w.oa ? '<div class="kws"><span class="kw">摘要缺失</span></div>' : "");
     var star = isFaved(w.doi) ? "★" : "☆";
-    return '<div class="entry" style="--jc:' + color + '" data-doi="' + esc(w.doi) + '">' +
+    var read = isRead(w.doi);
+    return '<div class="entry' + (read ? " is-read" : "") + '" style="--jc:' + color + '" data-doi="' + esc(w.doi) + '">' +
+      '<button class="read-toggle' + (read ? " on" : "") + '" data-doi="' + esc(w.doi) +
+      '" title="' + (read ? "取消已读" : "标为已读") + '">' + (read ? "已读" : "标为已读") + "</button>" +
       '<div class="entry-title">' + esc(w.t) + '</div><div class="title-zh" hidden></div>' +
       '<div class="entry-meta"><span class="jtag"><span class="dot"></span>' + esc(journalName) + "</span>" +
       "<span>" + esc(w.a.join(", ")) + "</span>" +
       (w.oa ? '<span class="' + oaCls + '">' + esc(OA_LABEL[w.oa] || w.oa) + "</span>" : "") +
+      '<button class="cite-btn" data-doi="' + esc(w.doi) + '" title="复制 APA 引文">引文</button>' +
       '<button class="fav-btn' + (isFaved(w.doi) ? " faved" : "") + '" data-doi="' + esc(w.doi) +
       '" title="收藏">' + star + "</button></div>" +
-      '<div class="doi-line">DOI：<a href="' + esc(doiUrl) + '" target="_blank" rel="noopener">' + esc(w.doi) + "</a></div>" +
+      '<div class="doi-line">DOI：<a href="' + esc(doiUrl) + '" target="_blank" rel="noopener">' + esc(w.doi) + "</a>" +
+      (w.pdf ? ' · <a class="pdf-link" href="' + esc(w.pdf) + '" target="_blank" rel="noopener">PDF 全文</a>' : "") +
+      "</div>" +
       kws + abs + "</div>";
   }
 
@@ -486,15 +497,97 @@
         lastCat = x.cat;
         html += '<div class="date-head">' + esc(x.cat) + "</div>";
       }
-      html += entryHtml({ doi: x.doi, t: x.t, a: x.a, d: x.d, oa: x.oa, url: x.url, k: x.k, abs: "" }, x.j);
+      var favWork = { doi: x.doi, t: x.t, a: x.a, d: x.d, oa: x.oa, url: x.url, k: x.k, abs: "", _j: x.j };
+      S.workIndex[x.doi] = favWork;
+      html += entryHtml(favWork, x.j);
     });
     box.innerHTML = html;
+  }
+
+  /* ---------- APA citation ---------- */
+
+  function apaAuthors(names) {
+    var inv = (names || []).map(function (n) {
+      var parts = String(n).trim().split(/\s+/);
+      if (parts.length < 2) return n;
+      var last = parts.pop();
+      var initials = parts.map(function (p) { return p.charAt(0) ? p.charAt(0).toUpperCase() + "." : ""; })
+        .filter(function (x) { return x; }).join(" ");
+      return initials ? last + ", " + initials : last;
+    });
+    if (!inv.length) return "";
+    if (inv.length === 1) return inv[0];
+    if (inv.length === 2) return inv[0] + " & " + inv[1];
+    if (inv.length <= 20) return inv.slice(0, -1).join(", ") + ", & " + inv[inv.length - 1];
+    return inv.slice(0, 19).join(", ") + ", ... " + inv[inv.length - 1];
+  }
+
+  // markdown=true wraps the journal name in *...* for the notes file
+  function apaCite(w, markdown) {
+    var year = (w.d || "").slice(0, 4);
+    var j = markdown ? "*" + (w.j || w._j || "") + "*" : (w.j || w._j || "");
+    return apaAuthors(w.a) + " (" + year + "). " + w.t + ". " + j +
+      ". https://doi.org/" + w.doi;
+  }
+
+  function copyCitation(doi) {
+    var w = S.workIndex[doi];
+    if (!w) { toast("找不到该条目数据"); return; }
+    var text = apaCite(w, false);
+    function done() { toast("已复制 APA 引文"); }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(done, function () { fallbackCopy(text); done(); });
+    } else {
+      fallbackCopy(text); done();
+    }
+  }
+
+  function fallbackCopy(text) {
+    var ta = document.createElement("textarea");
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand("copy"); } catch (e) { /* ignore */ }
+    document.body.removeChild(ta);
+  }
+
+  /* ---------- read status (stored in repo) ---------- */
+
+  var readSaveTimer = null;
+
+  function setRead(doi, on) {
+    var i = S.read.items.indexOf(doi);
+    if (on && i < 0) S.read.items.push(doi);
+    if (!on && i >= 0) S.read.items.splice(i, 1);
+    // update every rendered copy of this entry
+    document.querySelectorAll('.entry[data-doi="' + doi + '"]').forEach(function (entry) {
+      entry.classList.toggle("is-read", on);
+      var b = entry.querySelector(".read-toggle");
+      if (b) {
+        b.classList.toggle("on", on);
+        b.textContent = on ? "已读" : "标为已读";
+        b.title = on ? "取消已读" : "标为已读";
+      }
+    });
+    if (readSaveTimer) clearTimeout(readSaveTimer);
+    readSaveTimer = setTimeout(saveRead, 2000);
+  }
+
+  function saveRead() {
+    if (!localStorage.getItem("gh_token")) {
+      toast("已读标记仅本次有效：配置 GitHub 令牌后才能长期保存");
+      return;
+    }
+    ghGetFile("user/read.json").then(function (f) {
+      return ghPutRaw("user/read.json", JSON.stringify(S.read, null, 2),
+        f && f.sha, "read: update");
+    }).catch(function (e) { toast("已读保存失败：" + e.message); });
   }
 
   /* ---------- highlights ---------- */
 
   function citeLine(x) {
-    return x.a.join(", ") + " (" + x.d + "). " + x.t + ". *" + x.j + "*. https://doi.org/" + x.doi;
+    return apaCite(x, true);
   }
 
   function notesMd() {
@@ -553,7 +646,7 @@
       var hs = S.highlights.items.filter(function (h) { return h.doi === doi; });
       var x = hs[0];
       html += '<div class="note-work"><div class="note-cite">' +
-        esc(x.a.join(", ")) + " (" + esc(x.d) + '). <a href="https://doi.org/' + esc(x.doi) +
+        esc(apaAuthors(x.a)) + " (" + esc((x.d || "").slice(0, 4)) + '). <a href="https://doi.org/' + esc(x.doi) +
         '" target="_blank" rel="noopener">' + esc(x.t) + "</a>. <i>" + esc(x.j) + "</i>.</div>";
       hs.forEach(function (h) {
         html += '<div class="note-quote">' + esc(h.text) +
@@ -1135,6 +1228,28 @@
       return;
     }
 
+    // copy APA citation
+    if (t.classList && t.classList.contains("cite-btn")) {
+      copyCitation(t.dataset.doi);
+      return;
+    }
+
+    // read toggle
+    if (t.classList && t.classList.contains("read-toggle")) {
+      setRead(t.dataset.doi, !isRead(t.dataset.doi));
+      return;
+    }
+
+    // clicking DOI / PDF link auto-marks as read (navigation proceeds normally)
+    var link = t.closest && t.closest(".doi-line a");
+    if (link) {
+      var entryEl = t.closest(".entry");
+      if (entryEl && entryEl.dataset.doi && !isRead(entryEl.dataset.doi)) {
+        setRead(entryEl.dataset.doi, true);
+      }
+      return;
+    }
+
     // favorite star
     if (t.classList && t.classList.contains("fav-btn")) {
       openFavPicker(t);
@@ -1242,6 +1357,9 @@
       });
       loadUserJson("works", S.works).then(function (d) {
         if (d && d.items) S.works = d;
+      });
+      loadUserJson("read", S.read).then(function (d) {
+        if (d && d.items) S.read = d;
       });
       window.addEventListener("hashchange", route);
       route();
