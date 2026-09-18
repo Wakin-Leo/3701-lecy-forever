@@ -142,7 +142,10 @@ details.abs summary {
 details.abs summary::before { content: "▸"; font-size: 10px; transition: transform .15s; }
 details.abs[open] summary::before { transform: rotate(90deg); }
 details.abs p { margin: 9px 0 3px; text-align: justify; line-height: 1.7; }
-.abs-zh { border-top: 1px dashed var(--line); margin-top: 9px; padding-top: 9px; }
+.abs-zh {
+  border-top: 1px dashed var(--line); margin-top: 9px; padding-top: 9px;
+  white-space: pre-wrap; text-align: justify; line-height: 1.7; color: var(--ink);
+}
 .tr-btn {
   margin-top: 7px; font-size: 12px; border: 1px solid var(--line); background: var(--card);
   border-radius: 6px; padding: 3px 11px; cursor: pointer; color: var(--muted); transition: all .15s;

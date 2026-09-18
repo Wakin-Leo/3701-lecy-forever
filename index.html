@@ -101,6 +101,34 @@
       </div>
 
       <div class="admin-block">
+        <h3>翻译 API</h3>
+        <p class="muted">用于"翻译摘要"按钮。Key 只保存在您自己的浏览器里。默认使用智谱 GLM-4-Flash（免费额度，注册即送），也可换成任何 OpenAI 兼容接口。</p>
+        <details>
+          <summary>如何获取免费的智谱 Key（约 2 分钟）</summary>
+          <ol>
+            <li>打开 <a href="https://open.bigmodel.cn/" target="_blank" rel="noopener">open.bigmodel.cn</a>，用手机号注册登录。</li>
+            <li>右上角头像 → <b>API keys</b>（或直接访问 <a href="https://open.bigmodel.cn/usercenter/proj-mgmt/apikeys" target="_blank" rel="noopener">API keys 页面</a>）。</li>
+            <li>点"添加新的 API Key"，复制生成的 Key，粘贴到下面。</li>
+          </ol>
+        </details>
+        <div class="row">
+          <select id="tr-preset">
+            <option value="glm">智谱 GLM-4-Flash（免费，推荐）</option>
+            <option value="custom">自定义 OpenAI 兼容接口</option>
+          </select>
+        </div>
+        <div class="row" id="tr-custom-row" hidden>
+          <input type="text" id="tr-base" placeholder="接口地址，如 https://api.example.com/v1/chat/completions">
+          <input type="text" id="tr-model" placeholder="模型名，如 glm-4-flash" style="max-width:220px">
+        </div>
+        <div class="row">
+          <input type="password" id="tr-key" placeholder="翻译 API Key">
+          <button id="save-tr">保存翻译设置</button>
+        </div>
+        <span id="tr-status" class="muted"></span>
+      </div>
+
+      <div class="admin-block">
         <h3>当前期刊 <span id="journal-count" class="muted"></span></h3>
         <table id="journal-table"><tbody></tbody></table>
       </div>

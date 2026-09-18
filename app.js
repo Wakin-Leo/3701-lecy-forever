@@ -619,6 +619,28 @@
       toast("令牌已保存到本浏览器");
     };
 
+    // translation settings
+    var preset = $("tr-preset"), customRow = $("tr-custom-row");
+    preset.value = localStorage.getItem("tr_provider") || "glm";
+    $("tr-base").value = localStorage.getItem("tr_base") || "";
+    $("tr-model").value = localStorage.getItem("tr_model") || "";
+    $("tr-key").value = localStorage.getItem("tr_key") || "";
+    customRow.hidden = preset.value !== "custom";
+    preset.onchange = function () { customRow.hidden = preset.value !== "custom"; };
+    $("save-tr").onclick = function () {
+      var st = $("tr-status");
+      var key = $("tr-key").value.trim();
+      if (!key) { st.textContent = "请粘贴 API Key"; return; }
+      if (preset.value === "custom" && (!$("tr-base").value.trim() || !$("tr-model").value.trim())) {
+        st.textContent = "自定义接口需要填写接口地址和模型名"; return;
+      }
+      localStorage.setItem("tr_provider", preset.value);
+      localStorage.setItem("tr_base", $("tr-base").value.trim());
+      localStorage.setItem("tr_model", $("tr-model").value.trim());
+      localStorage.setItem("tr_key", key);
+      st.textContent = "已保存，回到文献列表即可使用翻译。";
+    };
+
     $("add-search").onclick = function () {
       var q = $("add-query").value.trim();
       if (!q) return;
@@ -689,15 +711,73 @@
     };
   }
 
+  /* ---------- translation ---------- */
+
+  var TR_PRESETS = {
+    glm: { base: "https://open.bigmodel.cn/api/paas/v4/chat/completions", model: "glm-4-flash" }
+  };
+
+  function trConfig() {
+    var p = localStorage.getItem("tr_provider") || "glm";
+    var key = localStorage.getItem("tr_key") || "";
+    var cfg = TR_PRESETS[p] || {
+      base: localStorage.getItem("tr_base") || "",
+      model: localStorage.getItem("tr_model") || ""
+    };
+    return { base: cfg.base, model: cfg.model, key: key };
+  }
+
+  function translateEntry(btn) {
+    var entry = btn.closest(".entry");
+    var box = entry.querySelector(".abs-zh");
+    var w = S.workIndex[entry.dataset.doi];
+    if (!w) return;
+    if (w._zh) { box.hidden = !box.hidden; btn.textContent = box.hidden ? "翻译摘要" : "收起译文"; return; }
+    var cfg = trConfig();
+    if (!cfg.key) {
+      btn.textContent = "请先在「期刊管理」页配置翻译 Key";
+      setTimeout(function () { btn.textContent = "翻译摘要"; }, 2500);
+      return;
+    }
+    btn.disabled = true;
+    btn.textContent = "翻译中…";
+    var prompt = "你是学术翻译助手。把下面这篇论文的标题和摘要忠实翻译成简体中文，保持学术语气，专业术语准确。" +
+      "输出格式固定为两行：第一行以「标题：」开头，之后换行，第二段以「摘要：」开头。不要输出任何其他内容。\n\n" +
+      "Title: " + w.t + "\n\nAbstract: " + (w.abs || "");
+    fetch(cfg.base, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Authorization": "Bearer " + cfg.key },
+      body: JSON.stringify({
+        model: cfg.model,
+        messages: [{ role: "user", content: prompt }],
+        temperature: 0.2
+      })
+    }).then(function (r) {
+      if (!r.ok) throw new Error("HTTP " + r.status);
+      return r.json();
+    }).then(function (d) {
+      var text = d.choices && d.choices[0] && d.choices[0].message && d.choices[0].message.content;
+      if (!text) throw new Error("返回内容为空");
+      w._zh = text.trim();
+      box.textContent = w._zh;
+      box.hidden = false;
+      btn.textContent = "收起译文";
+    }).catch(function (e) {
+      btn.textContent = "翻译失败：" + e.message;
+      setTimeout(function () { btn.textContent = "翻译摘要"; }, 3000);
+    }).then(function () {
+      btn.disabled = false;
+    });
+  }
+
   /* ---------- global event delegation ---------- */
 
   document.addEventListener("click", function (e) {
     var t = e.target;
 
-    // translate stub
+    // translate
     if (t.classList && t.classList.contains("tr-btn")) {
-      t.textContent = "翻译功能尚未启用";
-      setTimeout(function () { t.textContent = "翻译摘要"; }, 2000);
+      translateEntry(t);
       return;
     }
 
