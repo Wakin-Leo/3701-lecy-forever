@@ -262,3 +262,29 @@ button.danger:hover { border-color: #a4362e; }
   background: var(--ink); color: #f6f3ec; border-radius: 999px; padding: 9px 20px;
   font-size: 13px; z-index: 80; box-shadow: var(--shadow-hover);
 }
+
+/* ---------- field groups (journal taxonomy) ---------- */
+.fgroup { position: relative; }
+.fchip .caret { font-size: 10px; opacity: .6; margin-left: 2px; }
+.fpanel {
+  display: none; position: absolute; top: calc(100% + 6px); left: 0; z-index: 40;
+  background: var(--card); border: 1px solid var(--line); border-radius: 10px;
+  box-shadow: var(--shadow-hover); padding: 6px; min-width: 240px; max-width: 320px;
+  max-height: 320px; overflow-y: auto;
+}
+.fgroup:hover .fpanel, .fgroup.open .fpanel { display: block; }
+.fjournal {
+  display: flex; align-items: center; gap: 8px; width: 100%; text-align: left;
+  border: 0; background: none; padding: 8px 10px; border-radius: 7px;
+  font-size: 13px; cursor: pointer; color: var(--ink); line-height: 1.4;
+}
+.fjournal .dot { width: 7px; height: 7px; border-radius: 50%; flex: none; }
+.fjournal:hover { background: var(--accent-soft); color: var(--accent); }
+.fjournal.on { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+.filter-ind { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
+
+/* ---------- doi line ---------- */
+.doi-line { font-size: 12px; color: var(--muted); margin: -2px 0 7px; }
+.doi-line a { color: var(--muted); text-decoration: none; border-bottom: 1px dotted var(--muted); }
+.doi-line a:hover { color: var(--accent); border-bottom-color: var(--accent); }
+.entry-title { cursor: default; }
