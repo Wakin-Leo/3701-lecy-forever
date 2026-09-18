@@ -9,6 +9,19 @@
                  "#a34a1f", "#1e6e7a", "#6d3b5e", "#45526b", "#3f6212"];
   var ROUTES = ["latest", "archive", "favs", "notes", "admin"];
 
+  /* field taxonomy: slug -> field key */
+  var FIELD_ORDER = ["pa", "polisci", "psych", "ling", "other"];
+  var FIELD_LABEL = { pa: "PA", polisci: "政治学", psych: "心理学", ling: "语言学", other: "其他" };
+  var JFIELD = {
+    "pub-admin": "pa", "par": "pa", "pmr": "pa", "governance": "pa", "jpart": "pa",
+    "ppmg": "pa", "reg-gov": "pa", "policy-sci": "pa", "policy-politics": "pa",
+    "polcomm": "polisci", "polpsych": "polisci",
+    "jesp": "psych",
+    "das": "ling", "jlp": "ling", "appl-ling": "ling", "ling-typ": "ling",
+    "appl-corpus-ling": "ling", "j-socioling": "ling", "cds": "ling",
+    "jlsp": "ling", "ijld": "ling", "discourse-edu": "ling"
+  };
+
   var S = {
     config: null,
     manifest: null,
@@ -151,24 +164,22 @@
     var doiUrl = "https://doi.org/" + w.doi;
     var color = S.jColor[w._slug] || "var(--line)";
     var oaCls = w.oa === "closed" ? "oa-badge closed" : "oa-badge";
-    var fulltext = (w.oa && w.oa !== "closed" && w.url && w.url !== doiUrl)
-      ? ' · <a href="' + esc(w.url) + '" target="_blank" rel="noopener">全文</a>' : "";
     var kws = (w.k && w.k.length)
       ? '<div class="kws">' + w.k.map(function (k) { return '<span class="kw">' + esc(k) + "</span>"; }).join("") + "</div>"
       : "";
     var abs = w.abs
       ? '<details class="abs"><summary>摘要</summary><p>' + esc(w.abs) + "</p>" +
         '<div class="abs-zh" hidden></div><button class="tr-btn">翻译摘要</button></details>'
-      : (w.oa ? '<div class="kws"><span class="kw">摘要缺失 · <a href="' + esc(doiUrl) + '" target="_blank" rel="noopener">查看原文页</a></span></div>' : "");
+      : (w.oa ? '<div class="kws"><span class="kw">摘要缺失</span></div>' : "");
     var star = isFaved(w.doi) ? "★" : "☆";
     return '<div class="entry" style="--jc:' + color + '" data-doi="' + esc(w.doi) + '">' +
-      '<div class="entry-title"><a href="' + esc(doiUrl) + '" target="_blank" rel="noopener">' + esc(w.t) + "</a></div>" +
+      '<div class="entry-title">' + esc(w.t) + "</div>" +
       '<div class="entry-meta"><span class="jtag"><span class="dot"></span>' + esc(journalName) + "</span>" +
       "<span>" + esc(w.a.join(", ")) + "</span>" +
       (w.oa ? '<span class="' + oaCls + '">' + esc(OA_LABEL[w.oa] || w.oa) + "</span>" : "") +
-      fulltext +
       '<button class="fav-btn' + (isFaved(w.doi) ? " faved" : "") + '" data-doi="' + esc(w.doi) +
       '" title="收藏">' + star + "</button></div>" +
+      '<div class="doi-line">DOI：<a href="' + esc(doiUrl) + '" target="_blank" rel="noopener">' + esc(w.doi) + "</a></div>" +
       kws + abs + "</div>";
   }
 
@@ -199,26 +210,84 @@
 
   /* ---------- latest view ---------- */
 
+  function soloJournal() {
+    // returns the slug when the filter is exactly one journal, else null
+    if (S.activeJournals && S.activeJournals.size === 1) {
+      return Array.from(S.activeJournals)[0];
+    }
+    return null;
+  }
+
   function renderChips() {
     var box = $("journal-chips");
     box.innerHTML = "";
+    var solo = soloJournal();
+
+    // group journals by field, preserving manifest order inside each field
+    var groups = {};
     S.manifest.journals.forEach(function (j) {
-      var b = document.createElement("button");
-      b.className = "chip" + ((!S.activeJournals || S.activeJournals.has(j.slug)) ? " on" : "");
-      b.style.setProperty("--jc", S.jColor[j.slug]);
-      b.innerHTML = '<span class="dot"></span>' + esc(j.name);
-      b.onclick = function () {
-        if (!S.activeJournals) {
-          S.activeJournals = new Set(S.manifest.journals.map(function (x) { return x.slug; }));
-        }
-        if (S.activeJournals.has(j.slug)) S.activeJournals.delete(j.slug);
-        else S.activeJournals.add(j.slug);
-        if (S.activeJournals.size === S.manifest.journals.length) S.activeJournals = null;
+      var f = JFIELD[j.slug] || "other";
+      (groups[f] = groups[f] || []).push(j);
+    });
+
+    FIELD_ORDER.forEach(function (f) {
+      var js = groups[f];
+      if (!js || !js.length) return;
+      var wrap = document.createElement("div");
+      wrap.className = "fgroup";
+      var chip = document.createElement("button");
+      var anyOn = js.some(function (j) { return !S.activeJournals || S.activeJournals.has(j.slug); });
+      chip.className = "chip fchip" + (anyOn && solo ? " on" : "");
+      chip.innerHTML = esc(FIELD_LABEL[f]) + ' <span class="caret">▾</span>';
+      chip.onclick = function (e) {
+        e.stopPropagation();
+        var wasOpen = wrap.classList.contains("open");
+        document.querySelectorAll(".fgroup.open").forEach(function (g) { g.classList.remove("open"); });
+        if (!wasOpen) wrap.classList.add("open");
+      };
+      var panel = document.createElement("div");
+      panel.className = "fpanel";
+      js.forEach(function (j) {
+        var b = document.createElement("button");
+        b.className = "fjournal" + (solo === j.slug ? " on" : "");
+        b.innerHTML = '<span class="dot" style="background:' + S.jColor[j.slug] + '"></span>' + esc(j.name);
+        b.onclick = function (e) {
+          e.stopPropagation();
+          if (solo === j.slug) {
+            S.activeJournals = null;           // click again: back to all
+          } else {
+            S.activeJournals = new Set([j.slug]);
+          }
+          document.querySelectorAll(".fgroup.open").forEach(function (g) { g.classList.remove("open"); });
+          renderChips(); renderLatest();
+        };
+        panel.appendChild(b);
+      });
+      wrap.appendChild(chip);
+      wrap.appendChild(panel);
+      box.appendChild(wrap);
+    });
+
+    // active single-journal filter indicator
+    if (solo) {
+      var j = S.manifest.journals.filter(function (x) { return x.slug === solo; })[0];
+      var ind = document.createElement("button");
+      ind.className = "chip filter-ind";
+      ind.innerHTML = "仅看：" + esc(j ? j.name : solo) + " ✕";
+      ind.onclick = function () {
+        S.activeJournals = null;
         renderChips(); renderLatest();
       };
-      box.appendChild(b);
-    });
+      box.appendChild(ind);
+    }
   }
+
+  // close field panels on outside click
+  document.addEventListener("click", function (e) {
+    if (!(e.target.closest && e.target.closest(".fgroup"))) {
+      document.querySelectorAll(".fgroup.open").forEach(function (g) { g.classList.remove("open"); });
+    }
+  });
 
   function renderLatest() {
     var container = $("latest-list");
