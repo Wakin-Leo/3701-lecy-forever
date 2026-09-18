@@ -7,7 +7,7 @@
   var RECENT_WINDOW_DAYS = 30;
   var PALETTE = ["#1f3a5f", "#8c2f39", "#2f6f4f", "#7a5c1e", "#5b3a8c",
                  "#a34a1f", "#1e6e7a", "#6d3b5e", "#45526b", "#3f6212"];
-  var ROUTES = ["latest", "archive", "favs", "notes", "admin"];
+  var ROUTES = ["home", "latest", "archive", "favs", "notes", "bean", "admin"];
 
   /* field taxonomy: slug -> field key */
   var FIELD_ORDER = ["pa", "polisci", "psych", "ling", "other"];
@@ -31,6 +31,9 @@
     favs: { categories: ["待读", "重要"], items: [] },
     highlights: { items: [] },
     diary: { items: [] },
+    annis: { items: [] },
+    works: { items: [] },
+    beanInit: false,
     favCat: null,     // active category filter in favs view
     activeJournals: null,
     query: "",
@@ -148,6 +151,25 @@
       method: "PUT", headers: ghHeaders(), body: JSON.stringify(body)
     }).then(function (r) {
       if (!r.ok) throw new Error("写入失败 " + r.status);
+      return r.json();
+    });
+  }
+  function ghPutB64(path, b64content, message) {
+    // binary-safe variant: content already base64 (e.g. an image)
+    return fetch(API + encodeURI(path), {
+      method: "PUT", headers: ghHeaders(),
+      body: JSON.stringify({ message: message, content: b64content })
+    }).then(function (r) {
+      if (!r.ok) throw new Error("写入失败 " + r.status);
+      return r.json();
+    });
+  }
+  function ghDeleteFile(path, sha, message) {
+    return fetch(API + encodeURI(path), {
+      method: "DELETE", headers: ghHeaders(),
+      body: JSON.stringify({ message: message, sha: sha })
+    }).then(function (r) {
+      if (!r.ok) throw new Error("删除失败 " + r.status);
       return r.json();
     });
   }
@@ -585,6 +607,228 @@
     }).catch(function (e) { toast("保存失败：" + e.message); });
   }
 
+  /* ---------- 小黄豆罐头 ---------- */
+
+  var BEAN_EPOCH = new Date(2015, 10, 10);  // 2015-11-10 local
+
+  function daysSinceEpoch() {
+    var now = new Date();
+    var today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    return Math.floor((today - BEAN_EPOCH) / 86400000);
+  }
+
+  function renderCounter() {
+    $("bean-days").textContent = daysSinceEpoch();
+  }
+
+  /* ----- anniversaries ----- */
+
+  function saveAnnis() {
+    return ghGetFile("user/anniversaries.json").then(function (f) {
+      return ghPutRaw("user/anniversaries.json", JSON.stringify(S.annis, null, 2),
+        f && f.sha, "bean: update anniversaries");
+    });
+  }
+
+  function anniInfo(a) {
+    var parts = a.date.split("-");
+    var y = +parts[0], m = +parts[1] - 1, d = +parts[2];
+    var now = new Date();
+    var today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    if (a.yearly) {
+      var next = new Date(now.getFullYear(), m, d);
+      if (next < today) next = new Date(now.getFullYear() + 1, m, d);
+      var diff = Math.round((next - today) / 86400000);
+      if (diff === 0) return "就是今天 · 第 " + (now.getFullYear() - y) + " 周年";
+      var years = next.getFullYear() - y;
+      return "还有 " + diff + " 天" + (years > 0 ? " · 届时第 " + years + " 周年" : "");
+    }
+    var t = new Date(y, m, d);
+    var past = Math.floor((today - t) / 86400000);
+    if (past === 0) return "就是今天";
+    return past > 0 ? "已经 " + past + " 天" : "还有 " + (-past) + " 天";
+  }
+
+  function renderAnnis() {
+    var box = $("anni-list");
+    if (!S.annis.items.length) {
+      box.innerHTML = '<div class="muted anni-empty">还没有纪念日，在下面添加第一个吧。</div>';
+      return;
+    }
+    box.innerHTML = "";
+    S.annis.items.forEach(function (a, i) {
+      var row = document.createElement("div");
+      row.className = "anni-item";
+      row.innerHTML = '<div><div class="anni-name">' + esc(a.name) + "</div>" +
+        '<div class="anni-sub">' + esc(a.date) + (a.yearly ? " · 每年" : "") + " · " +
+        esc(anniInfo(a)) + "</div></div>";
+      var del = document.createElement("button");
+      del.className = "danger"; del.textContent = "删除";
+      del.onclick = function () {
+        if (!requireToken()) return;
+        if (!confirm("删除纪念日「" + a.name + "」？")) return;
+        S.annis.items.splice(i, 1);
+        toast("保存中…", true);
+        saveAnnis().then(function () { toast("已删除"); renderAnnis(); })
+          .catch(function (e) { toast("保存失败：" + e.message); });
+      };
+      row.appendChild(del);
+      box.appendChild(row);
+    });
+  }
+
+  function addAnni() {
+    var name = $("anni-name").value.trim();
+    var date = $("anni-date").value;
+    if (!name || !date) { toast("名称和日期都要填"); return; }
+    if (!requireToken()) return;
+    S.annis.items.push({ name: name, date: date, yearly: $("anni-yearly").checked });
+    toast("保存中…", true);
+    saveAnnis().then(function () {
+      $("anni-name").value = "";
+      toast("已添加纪念日");
+      renderAnnis();
+    }).catch(function (e) { toast("保存失败：" + e.message); });
+  }
+
+  /* ----- works ----- */
+
+  function saveWorks() {
+    return ghGetFile("user/works.json").then(function (f) {
+      var clean = { items: S.works.items.map(function (w) {
+        var c = {}; for (var k in w) if (k !== "preview") c[k] = w[k];
+        return c;
+      }) };
+      return ghPutRaw("user/works.json", JSON.stringify(clean, null, 2),
+        f && f.sha, "bean: update works");
+    });
+  }
+
+  function resizeImage(file) {
+    return new Promise(function (res, rej) {
+      var url = URL.createObjectURL(file);
+      var img = new Image();
+      img.onload = function () {
+        var max = 1600;
+        var scale = Math.min(1, max / Math.max(img.width, img.height));
+        var c = document.createElement("canvas");
+        c.width = Math.max(1, Math.round(img.width * scale));
+        c.height = Math.max(1, Math.round(img.height * scale));
+        c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+        URL.revokeObjectURL(url);
+        res(c.toDataURL("image/jpeg", 0.85));
+      };
+      img.onerror = function () { URL.revokeObjectURL(url); rej(new Error("图片读取失败")); };
+      img.src = url;
+    });
+  }
+
+  function uploadWork() {
+    var type = $("work-type").value;
+    var caption = $("work-caption").value.trim();
+    if (!requireToken()) return;
+    var st = $("work-status");
+    if (type === "text") {
+      var title = $("work-title").value.trim();
+      var text = $("work-text").value.trim();
+      if (!title || !text) { st.textContent = "标题和内容都要填"; return; }
+      st.textContent = "保存中…";
+      S.works.items.unshift({ id: "w" + Date.now(), type: "text", title: title, text: text, caption: caption, ts: nowStr() });
+      saveWorks().then(function () {
+        $("work-title").value = ""; $("work-text").value = ""; $("work-caption").value = "";
+        st.textContent = "已保存";
+        renderWorks();
+      }).catch(function (e) { st.textContent = "保存失败：" + e.message; });
+      return;
+    }
+    var file = $("work-file").files[0];
+    if (!file) { st.textContent = "请先选择图片文件"; return; }
+    st.textContent = "压缩图片中…";
+    resizeImage(file).then(function (dataUrl) {
+      var b64data = dataUrl.split(",")[1];
+      var path = "works/" + type + "-" + Date.now() + ".jpg";
+      st.textContent = "上传到仓库中…";
+      return ghPutB64(path, b64data, "bean: upload " + type).then(function (resp) {
+        var sha = resp.content && resp.content.sha;
+        S.works.items.unshift({
+          id: "w" + Date.now(), type: type, path: path, sha: sha,
+          caption: caption, ts: nowStr(), preview: dataUrl
+        });
+        return saveWorks();
+      });
+    }).then(function () {
+      $("work-file").value = ""; $("work-caption").value = "";
+      st.textContent = "已上传";
+      renderWorks();
+    }).catch(function (e) { st.textContent = "上传失败：" + e.message; });
+  }
+
+  function deleteWork(i) {
+    var w = S.works.items[i];
+    if (!requireToken()) return;
+    if (!confirm("删除这条作品？图片文件会一并从仓库删除。")) return;
+    toast("删除中…", true);
+    S.works.items.splice(i, 1);
+    var chain = saveWorks();
+    if (w.path && w.sha) {
+      chain = chain.then(function () { return ghDeleteFile(w.path, w.sha, "bean: delete work image"); });
+    }
+    chain.then(function () { toast("已删除"); renderWorks(); })
+      .catch(function (e) { toast("删除失败：" + e.message); renderWorks(); });
+  }
+
+  var WORK_TYPE_LABEL = { photo: "照片", art: "画作", text: "文字" };
+
+  function renderWorks() {
+    var box = $("works-list");
+    if (!S.works.items.length) { box.innerHTML = ""; return; }
+    box.innerHTML = "";
+    S.works.items.forEach(function (w, i) {
+      var card = document.createElement("div");
+      card.className = "work-card";
+      var body = "";
+      if (w.type === "text") {
+        body = '<div class="work-text-title">' + esc(w.title || "") + '</div>' +
+               '<div class="work-text-body">' + esc(w.text || "") + "</div>";
+      } else {
+        var src = w.preview || w.path;
+        body = '<a href="' + esc(w.path || "#") + '" target="_blank" rel="noopener">' +
+               '<img class="work-img" src="' + esc(src) + '" alt=""></a>';
+      }
+      card.innerHTML = body +
+        '<div class="work-meta"><span class="wtag">' + esc(WORK_TYPE_LABEL[w.type] || w.type) + "</span>" +
+        (w.caption ? '<span class="work-cap">' + esc(w.caption) + "</span>" : "") +
+        '<span class="work-ts">' + esc(w.ts) + "</span></div>";
+      var del = document.createElement("button");
+      del.className = "danger work-del"; del.textContent = "删除";
+      del.onclick = function () { deleteWork(i); };
+      card.appendChild(del);
+      box.appendChild(card);
+    });
+  }
+
+  function initBean() {
+    if (S.beanInit) return;
+    S.beanInit = true;
+    renderCounter();
+    setInterval(renderCounter, 60000);
+    $("anni-add").onclick = addAnni;
+    $("work-type").onchange = function () {
+      var isText = this.value === "text";
+      $("work-file-row").hidden = isText;
+      $("work-text-row").hidden = !isText;
+    };
+    $("work-save").onclick = uploadWork;
+  }
+
+  function renderBean() {
+    initBean();
+    renderCounter();
+    renderAnnis();
+    renderWorks();
+    renderDiary();
+  }
+
   /* ---------- admin ---------- */
 
   function renderAdminTable() {
@@ -951,8 +1195,8 @@
   /* ---------- routing & boot ---------- */
 
   function route() {
-    var r = (location.hash || "#latest").slice(1);
-    if (ROUTES.indexOf(r) < 0) r = "latest";
+    var r = (location.hash || "#home").slice(1);
+    if (ROUTES.indexOf(r) < 0) r = "home";
     S.route = r;
     ROUTES.forEach(function (v) { $("view-" + v).hidden = v !== r; });
     document.querySelectorAll("nav a").forEach(function (a) {
@@ -962,6 +1206,7 @@
     if (r === "archive") renderArchive();
     if (r === "favs") renderFavs();
     if (r === "notes") renderNotes();
+    if (r === "bean") renderBean();
     if (r === "admin" && !S.adminList) initAdmin();
   }
 
@@ -991,6 +1236,12 @@
       });
       loadUserJson("diary", S.diary).then(function (d) {
         if (d && d.items) { S.diary = d; renderDiary(); }
+      });
+      loadUserJson("anniversaries", S.annis).then(function (d) {
+        if (d && d.items) S.annis = d;
+      });
+      loadUserJson("works", S.works).then(function (d) {
+        if (d && d.items) S.works = d;
       });
       window.addEventListener("hashchange", route);
       route();
