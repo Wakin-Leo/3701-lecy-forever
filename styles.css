@@ -361,3 +361,24 @@ button.danger:hover { border-color: #a4362e; }
 .iz-en { color: var(--muted); font-size: 12.5px; line-height: 1.6; margin-top: 10px; }
 .iz-zh { color: var(--ink); font-size: 13.5px; line-height: 1.7; margin-top: 2px; text-align: justify; }
 .iz-en:first-child { margin-top: 2px; }
+
+/* ---------- read badge / citation / pdf ---------- */
+.entry { position: relative; }
+.read-toggle {
+  position: absolute; top: 12px; right: 14px;
+  border: 1px solid var(--line); background: var(--card); border-radius: 999px;
+  padding: 2px 10px; font-size: 11px; color: var(--muted); cursor: pointer;
+  opacity: .45; transition: all .15s;
+}
+.entry:hover .read-toggle { opacity: 1; }
+.read-toggle:hover { border-color: var(--accent); color: var(--accent); }
+.read-toggle.on {
+  opacity: 1; border-color: #d8c08a; background: #f7efdd; color: #7a5c1e; font-weight: 600;
+}
+.entry-title { padding-right: 74px; }
+.cite-btn {
+  border: 1px solid var(--line); background: var(--card); border-radius: 5px;
+  padding: 1px 8px; font-size: 11px; color: var(--muted); cursor: pointer; transition: all .15s;
+}
+.cite-btn:hover { color: var(--accent); border-color: var(--accent); }
+.pdf-link { font-weight: 600; }

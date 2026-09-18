@@ -32,6 +32,7 @@ DATA = os.path.join(ROOT, "data")
 SELECT = ",".join([
     "doi", "title", "publication_date", "authorships",
     "abstract_inverted_index", "open_access", "keywords", "type",
+    "best_oa_location",
 ])
 
 
@@ -76,6 +77,7 @@ def normalize(work):
     kws = [k.get("display_name", "") for k in (work.get("keywords") or [])[:8]]
     kws = [k for k in kws if k]
     doi = work.get("doi") or ""
+    best_oa = work.get("best_oa_location") or {}
     return {
         "doi": doi.replace("https://doi.org/", ""),
         "t": work.get("title") or "",
@@ -84,6 +86,7 @@ def normalize(work):
         "abs": reconstruct_abstract(work.get("abstract_inverted_index")),
         "oa": oa.get("oa_status") or "closed",
         "url": oa.get("oa_url") or (("https://doi.org/" + doi.replace("https://doi.org/", "")) if doi else ""),
+        "pdf": best_oa.get("pdf_url") or "",
         "k": kws,
     }
 
