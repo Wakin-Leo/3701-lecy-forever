@@ -189,22 +189,6 @@
     return S.read.items.indexOf(doi) >= 0;
   }
 
-  function jMetric(slug) {
-    var j = S.jBySlug[slug];
-    if (!j) return "";
-    if (j.jif != null) {
-      var tip = "JCR 影响因子" + (j.jif_year ? "（" + j.jif_year + " 年数据）" : "") +
-        (j.quartile ? "，分区 " + j.quartile : "");
-      return '<span class="jif" title="' + esc(tip) + '">IF ' + esc(String(j.jif)) +
-        (j.quartile ? " · " + esc(j.quartile) : "") + "</span>";
-    }
-    if (j.stats && j.stats.m2 != null) {
-      return '<span class="jif alt" title="OpenAlex 2 年篇均被引（非 JCR 官方影响因子，仅作参考）">2年均引 ' +
-        esc(String(j.stats.m2)) + "</span>";
-    }
-    return "";
-  }
-
   function entryHtml(w, journalName) {
     var doiUrl = "https://doi.org/" + w.doi;
     var color = S.jColor[w._slug] || "var(--line)";
@@ -220,7 +204,6 @@
       '" title="' + (read ? "取消已读" : "标为已读") + '">' + (read ? "已读" : "标为已读") + "</button>" +
       '<div class="entry-title">' + esc(w.t) + '</div><div class="title-zh" hidden></div>' +
       '<div class="entry-meta"><span class="jtag"><span class="dot"></span>' + esc(journalName) + "</span>" +
-      jMetric(w._slug) +
       "<span>" + esc(w.a.join(", ")) + "</span>" +
       (w.oa ? '<span class="' + oaCls + '">' + esc(oaLabel(w.oa)) + "</span>" : "") +
       '<button class="cite-btn" data-doi="' + esc(w.doi) + '" title="复制 APA 引文">APA</button>' +
