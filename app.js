@@ -750,7 +750,7 @@
 
   /* ----- title auto-translation (batched, cached in this browser) ----- */
 
-  var TITLE_ZH_KEY = "title_zh_v2";
+  var TITLE_ZH_KEY = "title_zh_v3";
   try { S.titleZh = JSON.parse(localStorage.getItem(TITLE_ZH_KEY) || "{}"); }
   catch (e) { S.titleZh = {}; }
   var titleInflight = {};
@@ -789,7 +789,9 @@
       if (i >= pending.length) return;
       var batch = pending.slice(i, i + 10); i += 10;
       var prompt = "把下列英文学术论文标题逐条翻译成简体中文，保持学术语气，专业术语准确。" +
-        "每条译文中最多挑选 3 个专业术语，以「中文（English）」的形式括注英文原词——括注必须紧跟在对应中文术语之后（如「话语滞后（discursive hysteresis）」），绝不要集中到句末；若译文直接保留了英文原词（如 EFL），则无需再括注；括号内只放英文原词或原形词组，不要加逗号等标点，每条绝不超过 3 处括注，宁可少注也不要超过。" +
+        "每条译文中最多挑选 3 个专业术语，以「中文（English）」的形式括注英文原词。括注必须紧跟在对应中文术语之后，绝不要集中到句末。" +
+        "示例：输入 The career advancement of street-level bureaucrats in China，正确：中国街头官僚（street-level bureaucrats）的职业晋升；错误：中国街头官僚的职业晋升（street-level bureaucrats）——括注被挪到句末，禁止这样输出。" +
+        "若译文直接保留了英文原词（如 EFL），则无需再括注；括号内只放英文原词或原形词组，不要加逗号、分号等标点，每条绝不超过 3 处括注，宁可少注也不要超过。" +
         "输出格式：每行一条译文，以原序号加英文句点开头（如 1. 译文），序号与输入一一对应，" +
         "不要输出任何解释或其他内容。\n\n" +
         batch.map(function (b, k) { return (k + 1) + ". " + b.t; }).join("\n");
@@ -854,7 +856,7 @@
     var prompt = "把下面的英文论文摘要逐句翻译。要求：\n" +
       "1. 按原文句子顺序，先输出英文原句（保持原文不变），再输出它的中文翻译；\n" +
       "2. 输出格式严格为每句两行：第一行以「EN: 」开头，第二行以「ZH: 」开头；\n" +
-      "3. 中文保持学术语气、术语准确；每句中文里最多挑选 2 个专业术语，在译文中以「中文（English）」的形式括注英文原词——括注必须紧跟在对应中文术语之后，不要放到句末；若译文直接保留了英文原词（如 EFL），则无需再括注；每句绝不超过 2 个括注，宁可不注也不要超过，不要额外列术语表；\n" +
+      "3. 中文保持学术语气、术语准确；每句中文里最多挑选 2 个专业术语，在译文中以「中文（English）」的形式括注英文原词——括注必须紧跟在对应中文术语之后，不要放到句末；示例：「街头官僚（street-level bureaucrats）拥有自由裁量权」是正确的，「街头官僚拥有自由裁量权（street-level bureaucrats）」是错误的；若译文直接保留了英文原词（如 EFL），则无需再括注；每句绝不超过 2 个括注，宁可不注也不要超过，不要额外列术语表；\n" +
       "4. 不要翻译标题，不要在译文中重复「Abstract/摘要」字样，不要输出任何解释或其他内容。\n\n" +
       (w.abs || "");
     trChat(cfg, prompt).then(function (text) {
