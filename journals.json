@@ -7,6 +7,20 @@
     { "slug": "jpart",      "name": "Journal of Public Administration Research and Theory", "issns": ["1053-1858", "1477-9803"], "publisher": "Oxford University Press" },
     { "slug": "polpsych",   "name": "Political Psychology",                               "issns": ["0162-895X", "1467-9221"], "publisher": "Wiley" },
     { "slug": "das",        "name": "Discourse & Society",                                "issns": ["0957-9265", "1460-3624"], "publisher": "SAGE" },
-    { "slug": "jlp",        "name": "Journal of Language and Politics",                   "issns": ["1569-2159", "1569-9862"], "publisher": "John Benjamins" }
+    { "slug": "jlp",        "name": "Journal of Language and Politics",                   "issns": ["1569-2159", "1569-9862"], "publisher": "John Benjamins" },
+    { "slug": "appl-ling",  "name": "Applied Linguistics",                                "issns": ["0142-6001", "1477-450X"], "publisher": "Oxford University Press" },
+    { "slug": "ling-typ",   "name": "Linguistic Typology",                                "issns": ["1430-0532", "1613-415X"], "publisher": "De Gruyter" },
+    { "slug": "appl-corpus-ling", "name": "Applied Corpus Linguistics",                   "issns": ["2666-7991"], "publisher": "Elsevier" },
+    { "slug": "j-socioling", "name": "Journal of Sociolinguistics",                       "issns": ["1360-6441", "1467-9841"], "publisher": "Wiley" },
+    { "slug": "cds",        "name": "Critical Discourse Studies",                         "issns": ["1740-5904", "1740-5912"], "publisher": "Routledge" },
+    { "slug": "jlsp",       "name": "Journal of Language and Social Psychology",          "issns": ["0261-927X", "1552-6526"], "publisher": "SAGE" },
+    { "slug": "jesp",       "name": "Journal of Experimental Social Psychology",          "issns": ["0022-1031", "1096-0465"], "publisher": "Elsevier" },
+    { "slug": "policy-politics", "name": "Policy & Politics",                             "issns": ["0305-5736", "1470-8442"], "publisher": "Policy Press" },
+    { "slug": "polcomm",    "name": "Political Communication",                            "issns": ["1058-4609", "1091-7675"], "publisher": "Taylor & Francis" },
+    { "slug": "ppmg",       "name": "Perspectives on Public Management and Governance",   "issns": ["2398-4910", "2398-4929"], "publisher": "Oxford University Press" },
+    { "slug": "reg-gov",    "name": "Regulation & Governance",                            "issns": ["1748-5983", "1748-5991"], "publisher": "Wiley" },
+    { "slug": "policy-sci", "name": "Policy Sciences",                                    "issns": ["0032-2687", "1573-0891"], "publisher": "Springer" },
+    { "slug": "ijld",       "name": "International Journal of Legal Discourse",           "issns": ["2364-8821", "2364-883X"], "publisher": "De Gruyter" },
+    { "slug": "discourse-edu", "name": "Discourse: Studies in the Cultural Politics of Education", "issns": ["0159-6306", "1469-3739"], "publisher": "Taylor & Francis" }
   ]
 }
