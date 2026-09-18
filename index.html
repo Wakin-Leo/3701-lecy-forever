@@ -28,10 +28,12 @@
     <div class="wrap header-row">
       <h1 id="site-title">Daily Digest</h1>
       <nav>
+        <a href="#home" data-route="home">入口</a>
         <a href="#latest" data-route="latest">最新</a>
         <a href="#archive" data-route="archive">回溯</a>
         <a href="#favs" data-route="favs">收藏</a>
         <a href="#notes" data-route="notes">笔记</a>
+        <a href="#bean" data-route="bean">罐头</a>
         <a href="#admin" data-route="admin">期刊管理</a>
       </nav>
     </div>
@@ -39,6 +41,19 @@
   </header>
 
   <main class="wrap">
+    <section id="view-home" hidden>
+      <div class="home-buttons">
+        <a class="big-btn" href="#latest">
+          <span class="bb-title">Daily Digest</span>
+          <span class="bb-sub">期刊题录 · 每日更新</span>
+        </a>
+        <a class="big-btn bean" href="#bean">
+          <span class="bb-title">小黄豆罐头</span>
+          <span class="bb-sub">日志 · 纪念日 · 作品</span>
+        </a>
+      </div>
+    </section>
+
     <section id="view-latest" hidden>
       <div class="toolbar">
         <input type="search" id="search" placeholder="搜索标题 / 摘要 / 关键词…">
@@ -47,16 +62,6 @@
       <div id="journal-chips" class="chips"></div>
       <div id="stats" class="stats-line"></div>
       <div id="latest-list"></div>
-
-      <div id="diary" class="diary-block">
-        <h2>小黄豆罐头日志</h2>
-        <textarea id="diary-input" rows="3" placeholder="今天想往罐头里存点什么…"></textarea>
-        <div class="diary-actions">
-          <button id="diary-save" class="primary">存入罐头</button>
-          <span id="diary-status" class="muted"></span>
-        </div>
-        <div id="diary-list"></div>
-      </div>
     </section>
 
     <section id="view-archive" hidden>
@@ -75,6 +80,61 @@
     <section id="view-notes" hidden>
       <p class="muted">此处展示您的划线笔记；同一份内容也自动保存在仓库的 <code>notes/摘要笔记.md</code> 文件中。</p>
       <div id="notes-list"></div>
+    </section>
+
+    <section id="view-bean" hidden>
+      <div class="bean-counter">
+        <div class="bc-num"><span id="bean-days">—</span><span class="bc-unit">天</span></div>
+        <div class="bc-label">自 2015 年 11 月 10 日起</div>
+      </div>
+
+      <div class="admin-block">
+        <h3>纪念日</h3>
+        <div id="anni-list"></div>
+        <div class="row">
+          <input type="text" id="anni-name" placeholder="纪念日名称">
+          <input type="date" id="anni-date">
+        </div>
+        <div class="row anni-row">
+          <label class="oa-toggle"><input type="checkbox" id="anni-yearly" checked> 每年重复</label>
+          <button id="anni-add">添加纪念日</button>
+        </div>
+        <span id="anni-status" class="muted"></span>
+      </div>
+
+      <div class="admin-block">
+        <h3>作品</h3>
+        <div class="row">
+          <select id="work-type">
+            <option value="photo">照片</option>
+            <option value="art">画作</option>
+            <option value="text">文字</option>
+          </select>
+        </div>
+        <div id="work-file-row" class="row anni-row">
+          <input type="file" id="work-file" accept="image/*">
+        </div>
+        <div id="work-text-row" hidden>
+          <input type="text" id="work-title" class="work-title" placeholder="标题">
+          <textarea id="work-text" rows="5" placeholder="写点什么…"></textarea>
+        </div>
+        <div class="row anni-row">
+          <input type="text" id="work-caption" placeholder="一句话说明（可选）">
+          <button id="work-save" class="primary">上传</button>
+        </div>
+        <span id="work-status" class="muted"></span>
+        <div id="works-list" class="works-grid"></div>
+      </div>
+
+      <div id="diary" class="diary-block">
+        <h2>小黄豆罐头日志</h2>
+        <textarea id="diary-input" rows="3" placeholder="今天想往罐头里存点什么…"></textarea>
+        <div class="diary-actions">
+          <button id="diary-save" class="primary">存入罐头</button>
+          <span id="diary-status" class="muted"></span>
+        </div>
+        <div id="diary-list"></div>
+      </div>
     </section>
 
     <section id="view-admin" hidden>
