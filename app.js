@@ -4,15 +4,18 @@
 
   var REPO = "Wakin-Leo/3701-lecy-forever";
   var RECENT_WINDOW_DAYS = 30;
+  var PALETTE = ["#1f3a5f", "#8c2f39", "#2f6f4f", "#7a5c1e", "#5b3a8c",
+                 "#a34a1f", "#1e6e7a", "#6d3b5e", "#45526b", "#3f6212"];
 
   var S = {
     config: null,
     manifest: null,
-    shardCache: {}, // "slug/year" -> array
+    shardCache: {},   // "slug/year" -> array
+    jColor: {},       // slug -> color
     activeJournals: null, // Set of slugs; null = all
     query: "",
     oaOnly: false,
-    adminList: null // working copy of journals for admin page
+    adminList: null
   };
 
   function $(id) { return document.getElementById(id); }
@@ -44,9 +47,11 @@
         } else {
           $("gate-err").textContent = "口令不正确";
           $("gate-input").value = "";
+          $("gate-input").focus();
         }
       });
     });
+    $("gate-input").focus();
   }
 
   function enterApp() {
@@ -77,17 +82,20 @@
 
   function entryHtml(w, journalName) {
     var doiUrl = "https://doi.org/" + w.doi;
+    var color = S.jColor[w._slug] || "var(--line)";
     var oaCls = w.oa === "closed" ? "oa-badge closed" : "oa-badge";
     var fulltext = (w.oa !== "closed" && w.url && w.url !== doiUrl)
       ? ' · <a href="' + esc(w.url) + '" target="_blank" rel="noopener">全文</a>' : "";
-    var kws = (w.k && w.k.length) ? '<div class="kws">关键词：' + esc(w.k.join("；")) + "</div>" : "";
+    var kws = (w.k && w.k.length)
+      ? '<div class="kws">' + w.k.map(function (k) { return '<span class="kw">' + esc(k) + "</span>"; }).join("") + "</div>"
+      : "";
     var abs = w.abs
       ? '<details class="abs"><summary>摘要</summary><p>' + esc(w.abs) + "</p>" +
         '<div class="abs-zh" hidden></div><button class="tr-btn">翻译摘要</button></details>'
-      : '<div class="kws">摘要缺失 · <a href="' + esc(doiUrl) + '" target="_blank" rel="noopener">查看原文页</a></div>';
-    return '<div class="entry">' +
+      : '<div class="kws"><span class="kw">摘要缺失 · <a href="' + esc(doiUrl) + '" target="_blank" rel="noopener">查看原文页</a></span></div>';
+    return '<div class="entry" style="--jc:' + color + '">' +
       '<div class="entry-title"><a href="' + esc(doiUrl) + '" target="_blank" rel="noopener">' + esc(w.t) + "</a></div>" +
-      '<div class="entry-meta"><span class="jtag">' + esc(journalName) + "</span>" +
+      '<div class="entry-meta"><span class="jtag"><span class="dot"></span>' + esc(journalName) + "</span>" +
       "<span>" + esc(w.a.join(", ")) + "</span>" +
       '<span class="' + oaCls + '">' + esc(OA_LABEL[w.oa] || w.oa) + "</span>" + fulltext + "</div>" +
       kws + abs + "</div>";
@@ -124,7 +132,8 @@
     S.manifest.journals.forEach(function (j) {
       var b = document.createElement("button");
       b.className = "chip" + ((!S.activeJournals || S.activeJournals.has(j.slug)) ? " on" : "");
-      b.textContent = j.name;
+      b.style.setProperty("--jc", S.jColor[j.slug]);
+      b.innerHTML = '<span class="dot"></span>' + esc(j.name);
       b.onclick = function () {
         if (!S.activeJournals) {
           S.activeJournals = new Set(S.manifest.journals.map(function (x) { return x.slug; }));
@@ -139,9 +148,12 @@
   }
 
   function renderLatest() {
+    var container = $("latest-list");
+    container.innerHTML = '<div class="loading">正在加载题录…</div>';
     var cutoff = new Date();
     cutoff.setDate(cutoff.getDate() - RECENT_WINDOW_DAYS);
     var cut = cutoff.toISOString().slice(0, 10);
+    var today = new Date().toISOString().slice(0, 10);
     var year = new Date().getFullYear();
     var years = [String(year), String(year - 1)];
     var jobs = [];
@@ -161,7 +173,11 @@
         d.forEach(function (w) { if (w.d >= cut) all.push(w); });
       });
       all.sort(function (a, b) { return a.d < b.d ? 1 : -1; });
-      renderGrouped(all.filter(passesFilters), $("latest-list"), jmap);
+      var shown = all.filter(passesFilters);
+      var nToday = all.filter(function (w) { return w.d === today; }).length;
+      $("stats").textContent = "近 " + RECENT_WINDOW_DAYS + " 天共 " + shown.length +
+        " 条" + (nToday ? " · 今日新增 " + nToday + " 条" : "");
+      renderGrouped(shown, container, jmap);
     });
   }
 
@@ -185,7 +201,7 @@
     var j = S.manifest.journals.filter(function (x) { return x.slug === slug; })[0];
     var ys = $("arc-year");
     ys.innerHTML = "";
-    Object.keys(j.years || {}).forEach(function (y) {
+    Object.keys(j.years || {}).sort().reverse().forEach(function (y) {
       var o = document.createElement("option");
       o.value = y; o.textContent = y + "（" + j.years[y] + " 条）";
       ys.appendChild(o);
@@ -195,11 +211,13 @@
 
   function renderArchive() {
     var slug = $("arc-journal").value, year = $("arc-year").value;
-    if (!slug || !year) { $("archive-list").innerHTML = '<div class="empty">该刊暂无回溯数据</div>'; return; }
+    var container = $("archive-list");
+    if (!slug || !year) { container.innerHTML = '<div class="empty">该刊暂无回溯数据</div>'; return; }
+    container.innerHTML = '<div class="loading">正在加载题录…</div>';
     var jmap = {}; jmap[slug] = $("arc-journal").selectedOptions[0].textContent;
     loadShard(slug, year).then(function (d) {
       d.forEach(function (w) { w._slug = slug; });
-      renderGrouped(d.filter(passesFilters), $("archive-list"), jmap);
+      renderGrouped(d.filter(passesFilters), container, jmap);
     });
   }
 
@@ -307,7 +325,7 @@
       ghGetSha("journals.json").then(function (sha) {
         return ghPut("journals.json", { journals: S.adminList }, sha, "journals: update watchlist");
       }).then(function () {
-        st.textContent = "已保存。后台任务会在几分钟内自动运行，新增期刊的历史回溯完成后即出现在网站上。";
+        st.textContent = "已保存。后台任务会在下一次运行时生效；新增期刊的历史回溯完成后即出现在网站上。";
       }).catch(function (e) {
         st.textContent = "保存失败：" + e.message + "（检查令牌权限）";
       });
@@ -358,6 +376,7 @@
   function boot() {
     fetchJson("data/index.json").then(function (m) {
       S.manifest = m;
+      m.journals.forEach(function (j, i) { S.jColor[j.slug] = PALETTE[i % PALETTE.length]; });
       $("site-title").textContent = S.config.title || "Daily Digest";
       $("updated-line").textContent = "数据更新至 " + m.updated +
         " · 收录 " + m.journals.length + " 种期刊";
@@ -374,7 +393,7 @@
       window.addEventListener("hashchange", route);
       route();
     }).catch(function () {
-      $("updated-line").textContent = "数据尚未生成：后台首次抓取正在运行，请稍后再来。";
+      $("updated-line").textContent = "数据尚未生成：后台首次抓取运行后即自动出现。";
     });
   }
 
