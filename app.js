@@ -714,7 +714,8 @@
   /* ---------- translation ---------- */
 
   var TR_PRESETS = {
-    glm: { base: "https://open.bigmodel.cn/api/paas/v4/chat/completions", model: "glm-4-flash" }
+    glm: { base: "https://open.bigmodel.cn/api/paas/v4/chat/completions", model: "glm-4-flash" },
+    siliconflow: { base: "https://api.siliconflow.cn/v1/chat/completions", model: "deepseek-ai/DeepSeek-V4-Flash" }
   };
 
   function trConfig() {
