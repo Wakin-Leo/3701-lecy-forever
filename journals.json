@@ -1,0 +1,12 @@
+{
+  "journals": [
+    { "slug": "pub-admin",  "name": "Public Administration",                              "issns": ["0033-3298", "1467-9299"], "publisher": "Wiley" },
+    { "slug": "par",        "name": "Public Administration Review",                       "issns": ["0033-3352", "1540-6210"], "publisher": "Wiley" },
+    { "slug": "pmr",        "name": "Public Management Review",                           "issns": ["1471-9037", "1471-9045"], "publisher": "Taylor & Francis" },
+    { "slug": "governance", "name": "Governance",                                         "issns": ["0952-1895", "1468-0491"], "publisher": "Wiley" },
+    { "slug": "jpart",      "name": "Journal of Public Administration Research and Theory", "issns": ["1053-1858", "1477-9803"], "publisher": "Oxford University Press" },
+    { "slug": "polpsych",   "name": "Political Psychology",                               "issns": ["0162-895X", "1467-9221"], "publisher": "Wiley" },
+    { "slug": "das",        "name": "Discourse & Society",                                "issns": ["0957-9265", "1460-3624"], "publisher": "SAGE" },
+    { "slug": "jlp",        "name": "Journal of Language and Politics",                   "issns": ["1569-2159", "1569-9862"], "publisher": "John Benjamins" }
+  ]
+}
