@@ -178,7 +178,7 @@
 
   /* ---------- entry rendering ---------- */
 
-  var OA_LABEL = { gold: "OA", hybrid: "OA", green: "OA", bronze: "OA", closed: "非 OA" };
+  function oaLabel(status) { return status === "closed" ? "非 OA" : "OA"; }
 
   function isFaved(doi) {
     return S.favs.items.some(function (x) { return x.doi === doi; });
@@ -221,7 +221,7 @@
       '<div class="entry-meta"><span class="jtag"><span class="dot"></span>' + esc(journalName) + "</span>" +
       jMetric(w._slug) +
       "<span>" + esc(w.a.join(", ")) + "</span>" +
-      (w.oa ? '<span class="' + oaCls + '">' + esc(OA_LABEL[w.oa] || w.oa) + "</span>" : "") +
+      (w.oa ? '<span class="' + oaCls + '">' + esc(oaLabel(w.oa)) + "</span>" : "") +
       '<button class="cite-btn" data-doi="' + esc(w.doi) + '" title="复制 APA 引文">APA</button>' +
       '<button class="fav-btn' + (isFaved(w.doi) ? " faved" : "") + '" data-doi="' + esc(w.doi) +
       '" title="收藏">' + star + "</button></div>" +
