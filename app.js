@@ -25,6 +25,7 @@
   var S = {
     config: null,
     manifest: null,
+    jBySlug: {},
     shardCache: {},   // "slug/year" -> array
     jColor: {},       // slug -> color
     workIndex: {},    // doi -> work (with _j journal name)
@@ -177,7 +178,7 @@
 
   /* ---------- entry rendering ---------- */
 
-  var OA_LABEL = { gold: "OA · Gold", hybrid: "OA · Hybrid", green: "OA · Green", bronze: "OA · Bronze", closed: "闭源" };
+  var OA_LABEL = { gold: "OA", hybrid: "OA", green: "OA", bronze: "OA", closed: "非 OA" };
 
   function isFaved(doi) {
     return S.favs.items.some(function (x) { return x.doi === doi; });
@@ -187,13 +188,26 @@
     return S.read.items.indexOf(doi) >= 0;
   }
 
+  function jMetric(slug) {
+    var j = S.jBySlug[slug];
+    if (!j) return "";
+    if (j.jif != null) {
+      var tip = "JCR 影响因子" + (j.jif_year ? "（" + j.jif_year + " 年数据）" : "") +
+        (j.quartile ? "，分区 " + j.quartile : "");
+      return '<span class="jif" title="' + esc(tip) + '">IF ' + esc(String(j.jif)) +
+        (j.quartile ? " · " + esc(j.quartile) : "") + "</span>";
+    }
+    if (j.stats && j.stats.m2 != null) {
+      return '<span class="jif alt" title="OpenAlex 2 年篇均被引（非 JCR 官方影响因子，仅作参考）">2年均引 ' +
+        esc(String(j.stats.m2)) + "</span>";
+    }
+    return "";
+  }
+
   function entryHtml(w, journalName) {
     var doiUrl = "https://doi.org/" + w.doi;
     var color = S.jColor[w._slug] || "var(--line)";
     var oaCls = w.oa === "closed" ? "oa-badge closed" : "oa-badge";
-    var kws = (w.k && w.k.length)
-      ? '<div class="kws">' + w.k.map(function (k) { return '<span class="kw">' + esc(k) + "</span>"; }).join("") + "</div>"
-      : "";
     var abs = w.abs
       ? '<details class="abs"><summary>摘要</summary><p>' + esc(w.abs) + "</p>" +
         '<div class="abs-zh" hidden></div><button class="tr-btn">翻译摘要</button></details>'
@@ -205,6 +219,7 @@
       '" title="' + (read ? "取消已读" : "标为已读") + '">' + (read ? "已读" : "标为已读") + "</button>" +
       '<div class="entry-title">' + esc(w.t) + '</div><div class="title-zh" hidden></div>' +
       '<div class="entry-meta"><span class="jtag"><span class="dot"></span>' + esc(journalName) + "</span>" +
+      jMetric(w._slug) +
       "<span>" + esc(w.a.join(", ")) + "</span>" +
       (w.oa ? '<span class="' + oaCls + '">' + esc(OA_LABEL[w.oa] || w.oa) + "</span>" : "") +
       '<button class="cite-btn" data-doi="' + esc(w.doi) + '" title="复制 APA 引文">APA</button>' +
@@ -213,7 +228,7 @@
       '<div class="doi-line">DOI：<a href="' + esc(doiUrl) + '" target="_blank" rel="noopener">' + esc(w.doi) + "</a>" +
       (w.pdf ? ' · <a class="pdf-link" href="' + esc(w.pdf) + '" target="_blank" rel="noopener">PDF 全文</a>' : "") +
       "</div>" +
-      kws + abs + "</div>";
+      abs + "</div>";
   }
 
   function renderGrouped(list, container, journalMap) {
@@ -1329,7 +1344,11 @@
   function boot() {
     fetchJson("data/index.json").then(function (m) {
       S.manifest = m;
-      m.journals.forEach(function (j, i) { S.jColor[j.slug] = PALETTE[i % PALETTE.length]; });
+      S.jBySlug = {};
+      m.journals.forEach(function (j, i) {
+        S.jColor[j.slug] = PALETTE[i % PALETTE.length];
+        S.jBySlug[j.slug] = j;
+      });
       $("site-title").textContent = S.config.title || "Daily Digest";
       $("updated-line").textContent = "数据更新至 " + m.updated +
         " · 收录 " + m.journals.length + " 种期刊";

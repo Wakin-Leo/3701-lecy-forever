@@ -212,6 +212,19 @@ def upsert_works(slug, works):
     return n
 
 
+def source_stats(issn):
+    """OpenAlex journal-level metrics (2yr mean citedness, h-index)."""
+    url = ("https://api.openalex.org/sources/issn:" + urllib.parse.quote(issn)
+           + "?select=summary_stats&mailto=" + MAILTO)
+    try:
+        s = http_get(url).get("summary_stats") or {}
+    except Exception as exc:  # noqa: BLE001
+        print(f"  source stats failed for {issn}: {exc}")
+        return None
+    m2 = s.get("2yr_mean_citedness")
+    return {"m2": round(m2, 1) if m2 is not None else None, "h": s.get("h_index")}
+
+
 def rebuild_manifest(journals):
     manifest = {"updated": date.today().isoformat(), "journals": []}
     for j in journals:
@@ -223,6 +236,11 @@ def rebuild_manifest(journals):
                     shard = load_json(os.path.join(jdir, fn), [])
                     years[fn[:4]] = len(shard)
         entry = dict(j)
+        for issn in j.get("issns", []):
+            st = source_stats(issn)
+            if st:
+                entry["stats"] = st
+                break
         entry["years"] = dict(sorted(years.items(), reverse=True))
         manifest["journals"].append(entry)
     save_json(os.path.join(DATA, "index.json"), manifest)
