@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="noindex, nofollow">
 <title>Daily Digest</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='29' fill='none' stroke='%231f3a5f' stroke-width='4'/%3E%3Ctext x='32' y='43' font-family='Georgia' font-size='30' fill='%231f3a5f' text-anchor='middle'%3ED%3C/text%3E%3C/svg%3E">
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -12,9 +13,11 @@
 <div id="gate">
   <form id="gate-form" autocomplete="off">
     <div class="gate-box">
+      <div class="gate-mark">D</div>
       <div class="gate-title">Daily Digest</div>
+      <div class="gate-sub">私人期刊题录 · 每日更新</div>
       <input type="password" id="gate-input" placeholder="口令" required>
-      <button type="submit">进入</button>
+      <button type="submit">进 入</button>
       <div id="gate-err"></div>
     </div>
   </form>
@@ -40,6 +43,7 @@
         <label class="oa-toggle"><input type="checkbox" id="oa-only"> 仅看 OA</label>
       </div>
       <div id="journal-chips" class="chips"></div>
+      <div id="stats" class="stats-line"></div>
       <div id="latest-list"></div>
     </section>
 
@@ -57,7 +61,17 @@
 
       <div class="admin-block">
         <h3>GitHub 令牌</h3>
-        <p class="muted">首次使用需填入一个 GitHub fine-grained token（仅授予本仓库 Contents 读写权限）。令牌只保存在您自己的浏览器里。</p>
+        <p class="muted">令牌用于把期刊清单写回仓库，只保存在您自己的浏览器里，不经过任何第三方。</p>
+        <details>
+          <summary>如何创建一个令牌（约 1 分钟）</summary>
+          <ol>
+            <li>打开 <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">github.com/settings/personal-access-tokens/new</a>（需登录）。</li>
+            <li>Token name 随意，如 <code>digest-admin</code>；Expiration 建议 90 天或自定义。</li>
+            <li>Repository access 选 <b>Only select repositories</b>，勾选 <code>3701-lecy-forever</code>。</li>
+            <li>Permissions → Repository permissions → <b>Contents</b> 设为 <b>Read and write</b>。</li>
+            <li>底部 Generate token，复制以 <code>github_pat_</code> 开头的串，粘贴到下面。</li>
+          </ol>
+        </details>
         <div class="row">
           <input type="password" id="gh-token" placeholder="github_pat_…">
           <button id="save-token">保存令牌</button>
@@ -86,7 +100,7 @@
       <div class="admin-block">
         <h3>修改进站口令</h3>
         <div class="row">
-          <input type="password" id="new-pass" placeholder="新口令">
+          <input type="password" id="new-pass" placeholder="新口令（至少 6 位）">
           <button id="change-pass">修改</button>
         </div>
         <span id="pass-status" class="muted"></span>
