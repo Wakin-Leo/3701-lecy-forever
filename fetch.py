@@ -24,6 +24,7 @@ from datetime import date, timedelta
 BASE = "https://api.openalex.org/works"
 MAILTO = "wakin-leo@users.noreply.github.com"  # OpenAlex polite pool
 RECENT_DAYS = 10  # overlap window so late updates to recent records get merged
+# schema v2 (2026-09-18): records include best_oa_location.pdf_url as "pdf"
 PER_PAGE = 200
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
