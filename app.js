@@ -40,6 +40,7 @@
     activeJournals: null,
     query: "",
     oaOnly: false,
+    unreadOnly: false,
     adminList: null,
     route: "latest"
   };
@@ -250,6 +251,7 @@
   function passesFilters(w) {
     if (S.activeJournals && !S.activeJournals.has(w._slug)) return false;
     if (S.oaOnly && w.oa === "closed") return false;
+    if (S.unreadOnly && isRead(w.doi)) return false;
     if (S.query) {
       var hay = (w.t + " " + (w.abs || "") + " " + (w.k || []).join(" ")).toLowerCase();
       if (hay.indexOf(S.query) < 0) return false;
@@ -586,6 +588,8 @@
     });
     if (readSaveTimer) clearTimeout(readSaveTimer);
     readSaveTimer = setTimeout(saveRead, 2000);
+    // with "仅看未读" on, drop the entry from the list immediately
+    if (S.unreadOnly) { renderLatest(); renderArchive(); }
   }
 
   function saveRead() {
@@ -1362,6 +1366,10 @@
         S.oaOnly = this.checked;
         renderLatest(); renderArchive();
       });
+      $("unread-only").addEventListener("change", function () {
+        S.unreadOnly = this.checked;
+        renderLatest(); renderArchive();
+      });
       // load user data (public reads)
       loadUserJson("favorites", S.favs).then(function (d) {
         if (d && d.items) S.favs = d;
@@ -1380,6 +1388,8 @@
       });
       loadUserJson("read", S.read).then(function (d) {
         if (d && d.items) S.read = d;
+        // read.json arrives async; re-apply the unread filter if it is on
+        if (S.unreadOnly) { renderLatest(); renderArchive(); }
       });
       window.addEventListener("hashchange", route);
       route();
