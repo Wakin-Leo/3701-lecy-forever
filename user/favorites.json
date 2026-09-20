@@ -2,9 +2,33 @@
   "categories": [
     "待读",
     "重要",
-    "政府回应"
+    "政府回应",
+    "算法治理"
   ],
   "items": [
+    {
+      "doi": "10.1111/padm.70092",
+      "t": "Responsible Algorithmization in the Public Sector: A “Natural Perspective” Based on Ethnographic Research in Regulation, Policing, and Healthcare",
+      "a": [
+        "Albert Meijer",
+        "Lukas Lorenz",
+        "Isabelle Donatz-Fest",
+        "Jan-Luuk Hoff"
+      ],
+      "d": "2026-09-11",
+      "j": "Public Administration",
+      "oa": "hybrid",
+      "url": "https://onlinelibrary.wiley.com/doi/pdfdirect/10.1111/padm.70092",
+      "k": [
+        "Safeguarding",
+        "Ethnography",
+        "Perspective (graphical)",
+        "Government (linguistics)",
+        "Set (abstract data type)"
+      ],
+      "cat": "算法治理",
+      "ts": "2026-09-20 21:25"
+    },
     {
       "doi": "10.1111/padm.70095",
       "t": "The Right Key for the Right Lock: How Government Response Methods and Demand Types Affect Citizen Satisfaction",
