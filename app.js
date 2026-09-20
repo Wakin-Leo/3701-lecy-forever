@@ -41,7 +41,7 @@
     query: "",
     oaOnly: false,
     unreadOnly: false,
-    recentDays: 30,   // latest-view window; "+30 days" button extends it
+    recentDays: 30,   // latest-view window; "+90 days" button extends it
     minYear: null,
     adminList: null,
     route: "latest"
@@ -363,7 +363,7 @@
       lm.style.margin = "18px auto";
       var atEarliest = S.minYear != null && +cut.slice(0, 4) <= S.minYear;
       lm.disabled = atEarliest;
-      lm.textContent = atEarliest ? "已追溯到有记录的最早年份" : "向前追溯 30 天";
+      lm.textContent = atEarliest ? "已追溯到有记录的最早年份" : "向前追溯 90 天";
     });
   }
 
@@ -1408,7 +1408,7 @@
       });
       if (S.minYear === 9999) S.minYear = null;
       $("load-more").addEventListener("click", function () {
-        S.recentDays += 30;
+        S.recentDays += 90;
         renderLatest();
       });
       $("search").addEventListener("input", function () {
