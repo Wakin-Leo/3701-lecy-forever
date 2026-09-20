@@ -41,6 +41,8 @@
     query: "",
     oaOnly: false,
     unreadOnly: false,
+    recentDays: 30,   // latest-view window; "+30 days" button extends it
+    minYear: null,
     adminList: null,
     route: "latest"
   };
@@ -327,11 +329,12 @@
     var container = $("latest-list");
     container.innerHTML = '<div class="loading">正在加载题录…</div>';
     var cutoff = new Date();
-    cutoff.setDate(cutoff.getDate() - RECENT_WINDOW_DAYS);
+    cutoff.setDate(cutoff.getDate() - S.recentDays);
     var cut = cutoff.toISOString().slice(0, 10);
     var today = new Date().toISOString().slice(0, 10);
-    var year = new Date().getFullYear();
-    var years = [String(year), String(year - 1)];
+    var thisYear = new Date().getFullYear();
+    var years = [];
+    for (var y = thisYear; y >= +cut.slice(0, 4); y--) years.push(String(y));
     var jobs = [];
     S.manifest.journals.forEach(function (j) {
       years.forEach(function (y) {
@@ -351,9 +354,16 @@
       all.sort(function (a, b) { return a.d < b.d ? 1 : -1; });
       var shown = all.filter(passesFilters);
       var nToday = all.filter(function (w) { return w.d === today; }).length;
-      $("stats").textContent = "近 " + RECENT_WINDOW_DAYS + " 天共 " + shown.length +
+      $("stats").textContent = "近 " + S.recentDays + " 天共 " + shown.length +
         " 条" + (nToday ? " · 今日新增 " + nToday + " 条" : "");
       renderGrouped(shown, container, jmap);
+      var lm = $("load-more");
+      lm.hidden = false;
+      lm.style.display = "block";
+      lm.style.margin = "18px auto";
+      var atEarliest = S.minYear != null && +cut.slice(0, 4) <= S.minYear;
+      lm.disabled = atEarliest;
+      lm.textContent = atEarliest ? "已追溯到有记录的最早年份" : "向前追溯 30 天";
     });
   }
 
@@ -1392,6 +1402,15 @@
         " · 收录 " + m.journals.length + " 种期刊";
       renderChips();
       initArchive();
+      S.minYear = 9999;
+      m.journals.forEach(function (j) {
+        Object.keys(j.years || {}).forEach(function (y) { if (+y < S.minYear) S.minYear = +y; });
+      });
+      if (S.minYear === 9999) S.minYear = null;
+      $("load-more").addEventListener("click", function () {
+        S.recentDays += 30;
+        renderLatest();
+      });
       $("search").addEventListener("input", function () {
         S.query = this.value.trim().toLowerCase();
         renderLatest(); renderArchive();
