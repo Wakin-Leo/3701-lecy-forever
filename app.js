@@ -41,7 +41,7 @@
     query: "",
     oaOnly: false,
     unreadOnly: false,
-    recentDays: 30,   // latest-view window; "+90 days" button extends it
+    recentDays: 90,   // latest-view window; "+90 days" button extends it
     minYear: null,
     adminList: null,
     route: "latest"
