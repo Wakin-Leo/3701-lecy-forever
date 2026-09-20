@@ -3,9 +3,33 @@
     "待读",
     "重要",
     "政府回应",
-    "算法治理"
+    "算法治理",
+    "性别"
   ],
   "items": [
+    {
+      "doi": "10.1111/padm.70077",
+      "t": "Does Gender Budgeting Improve Women's Well‐Being, Equality, and Empowerment?",
+      "a": [
+        "Marjorie De la Cruz",
+        "Milena I. Neshkova",
+        "Yoon‐Jung Choi"
+      ],
+      "d": "2026-08-23",
+      "j": "Public Administration",
+      "oa": "closed",
+      "url": "https://doi.org/10.1111/padm.70077",
+      "k": [
+        "Gender equality",
+        "Politics",
+        "Public spending",
+        "Sustainable development",
+        "Gender disparity",
+        "Gender relations"
+      ],
+      "cat": "性别",
+      "ts": "2026-09-20 21:32"
+    },
     {
       "doi": "10.1111/padm.70079",
       "t": "A Public Values Framework for AI Governance: Evidence From US Federal AI Policymaking",
