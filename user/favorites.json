@@ -1,7 +1,33 @@
 {
   "categories": [
     "待读",
-    "重要"
+    "重要",
+    "政府回应"
   ],
-  "items": []
+  "items": [
+    {
+      "doi": "10.1111/padm.70095",
+      "t": "The Right Key for the Right Lock: How Government Response Methods and Demand Types Affect Citizen Satisfaction",
+      "a": [
+        "Na Tang",
+        "Wenjia Huang",
+        "Nana Huang",
+        "Mengyao Zhang"
+      ],
+      "d": "2026-09-17",
+      "j": "Public Administration",
+      "oa": "bronze",
+      "url": "https://onlinelibrary.wiley.com/doi/pdfdirect/10.1111/padm.70095",
+      "k": [
+        "Government (linguistics)",
+        "Perspective (graphical)",
+        "Affect (linguistics)",
+        "Key (lock)",
+        "Survey data collection",
+        "Digital government"
+      ],
+      "cat": "政府回应",
+      "ts": "2026-09-20 21:24"
+    }
+  ]
 }
