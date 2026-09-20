@@ -1407,6 +1407,8 @@
       // load user data (public reads)
       loadUserJson("favorites", S.favs).then(function (d) {
         if (d && d.items) S.favs = d;
+        // favorites arrive async; re-render if the user landed on #favs directly
+        if (S.route === "favs") renderFavs();
       });
       loadUserJson("highlights", S.highlights).then(function (d) {
         if (d && d.items) S.highlights = d;
