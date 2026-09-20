@@ -7,6 +7,32 @@
   ],
   "items": [
     {
+      "doi": "10.1111/padm.70079",
+      "t": "A Public Values Framework for AI Governance: Evidence From US Federal AI Policymaking",
+      "a": [
+        "Ogadinma Enwereazu",
+        "Kaylyn Jackson Schiff",
+        "Tyler Girard",
+        "Alexander Wilhelm",
+        "Daniel Schiff"
+      ],
+      "d": "2026-09-11",
+      "j": "Public Administration",
+      "oa": "hybrid",
+      "url": "https://doi.org/10.1111/padm.70079",
+      "k": [
+        "Corporate governance",
+        "Accountability",
+        "Government (linguistics)",
+        "Public policy",
+        "Value (mathematics)",
+        "Public sector",
+        "Good governance"
+      ],
+      "cat": "算法治理",
+      "ts": "2026-09-20 21:26"
+    },
+    {
       "doi": "10.1111/padm.70092",
       "t": "Responsible Algorithmization in the Public Sector: A “Natural Perspective” Based on Ethnographic Research in Regulation, Policing, and Healthcare",
       "a": [
