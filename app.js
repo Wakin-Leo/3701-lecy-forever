@@ -414,7 +414,7 @@
     if (existing) existing.cat = cat;
     else S.favs.items.unshift({
       doi: doi, t: w.t, a: w.a, d: w.d, j: w._j || "",
-      oa: w.oa || "closed", url: w.url || "", k: w.k || [],
+      oa: w.oa || "closed", url: w.url || "", k: w.k || [], abs: w.abs || "",
       cat: cat, ts: nowStr()
     });
     toast("保存中…", true);
@@ -497,11 +497,62 @@
         lastCat = x.cat;
         html += '<div class="date-head">' + esc(x.cat) + "</div>";
       }
-      var favWork = { doi: x.doi, t: x.t, a: x.a, d: x.d, oa: x.oa, url: x.url, k: x.k, abs: "", _j: x.j };
+      var cached = S.workIndex[x.doi];
+      var favWork = { doi: x.doi, t: x.t, a: x.a, d: x.d, oa: x.oa, url: x.url, k: x.k,
+        abs: x.abs || (cached && cached.abs) || "", _j: x.j };
       S.workIndex[x.doi] = favWork;
       html += entryHtml(favWork, x.j);
     });
     box.innerHTML = html;
+    fillMissingFavAbs(items);
+  }
+
+  /* old favorites stored no abstract; backfill from OpenAlex by DOI, then persist */
+  function reconstructAbs(inv) {
+    if (!inv) return "";
+    var pos = {}, max = -1;
+    Object.keys(inv).forEach(function (w) {
+      inv[w].forEach(function (p) { pos[p] = w; if (p > max) max = p; });
+    });
+    var arr = [];
+    for (var k = 0; k <= max; k++) arr.push(pos[k] || "");
+    var text = arr.join(" ").replace(/\s+/g, " ").trim();
+    var labels = ["Abstract ", "ABSTRACT ", "Abstract. ", "Abstract: "];
+    for (var i = 0; i < labels.length; i++) {
+      if (text.indexOf(labels[i]) === 0) { text = text.slice(labels[i].length).trim(); break; }
+    }
+    return text;
+  }
+
+  var favAbsBusy = false;
+  function fillMissingFavAbs(items) {
+    if (favAbsBusy) return;
+    var missing = items.filter(function (x) { return !x.abs && x.doi; });
+    if (!missing.length) return;
+    favAbsBusy = true;
+    var changed = false, i = 0;
+    function finish() {
+      favAbsBusy = false;
+      if (!changed) return;
+      renderFavs();
+      if (localStorage.getItem("gh_token")) {
+        saveFavsToRepo().catch(function () { /* keep display-only copy */ });
+      }
+    }
+    function next() {
+      if (i >= missing.length) { finish(); return; }
+      var x = missing[i++];
+      fetch("https://api.openalex.org/works/doi:" + encodeURIComponent(x.doi) +
+            "?select=abstract_inverted_index&mailto=wakin-leo%40users.noreply.github.com")
+        .then(function (r) { return r.ok ? r.json() : null; })
+        .then(function (d) {
+          var abs = d && reconstructAbs(d.abstract_inverted_index);
+          if (abs) { x.abs = abs; changed = true; }
+        })
+        .catch(function () { /* skip this one */ })
+        .then(function () { setTimeout(next, 150); });
+    }
+    next();
   }
 
   /* ---------- APA citation ---------- */
