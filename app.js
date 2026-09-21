@@ -10,8 +10,8 @@
   var ROUTES = ["home", "latest", "archive", "favs", "notes", "bean", "admin"];
 
   /* field taxonomy: slug -> field key */
-  var FIELD_ORDER = ["pa", "polisci", "psych", "ling", "other"];
-  var FIELD_LABEL = { pa: "PA", polisci: "政治学", psych: "心理学", ling: "语言学", other: "其他" };
+  var FIELD_ORDER = ["pa", "polisci", "psych", "ling", "crisis", "other"];
+  var FIELD_LABEL = { pa: "PA", polisci: "政治学", psych: "心理学", ling: "语言学", crisis: "危机应对", other: "其他" };
   var JFIELD = {
     "pub-admin": "pa", "par": "pa", "pmr": "pa", "governance": "pa", "jpart": "pa",
     "ppmg": "pa", "reg-gov": "pa", "policy-sci": "pa", "policy-politics": "pa",
@@ -22,8 +22,8 @@
     "jlsp": "ling", "ijld": "ling", "discourse-edu": "ling",
     "lang-soc": "ling", "disc-comm": "ling", "disc-studies": "ling",
     "soc-sem": "ling", "j-prag": "ling",
-    "jccm": "pa",
-    "risk-anal": "other"
+    "jccm": "crisis",
+    "risk-anal": "crisis"
   };
 
   var S = {
