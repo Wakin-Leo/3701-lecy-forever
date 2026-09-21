@@ -370,7 +370,7 @@ button.danger:hover { border-color: #a4362e; }
 .title-zh { font-size: 13.5px; color: var(--muted); margin-top: 3px; line-height: 1.55; }
 
 /* ---------- interleaved translation ---------- */
-.iz-en { color: var(--muted); font-size: 12.5px; line-height: 1.6; margin-top: 10px; }
+.iz-en { color: var(--ink-soft); font-size: 14.5px; font-weight: 600; line-height: 1.6; margin-top: 10px; }
 .iz-zh { color: var(--ink); font-size: 13.5px; line-height: 1.7; margin-top: 2px; text-align: justify; }
 .iz-en:first-child { margin-top: 2px; }
 
