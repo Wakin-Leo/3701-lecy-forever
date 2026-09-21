@@ -5,9 +5,35 @@
     "政府回应",
     "算法治理",
     "性别",
-    "话语政治"
+    "话语政治",
+    "话语与危机"
   ],
   "items": [
+    {
+      "doi": "10.1111/1468-5973.70227",
+      "t": "What Agencies Post vs. What the Public Engages With: A CERC Analysis of Crisis Messaging on X During the 2025 Los Angeles Wildfires",
+      "a": [
+        "Shalewa Babatayo",
+        "Bridget Rubenking"
+      ],
+      "d": "2026-09-01",
+      "j": "Journal of Contingencies and Crisis Management",
+      "oa": "bronze",
+      "url": "https://onlinelibrary.wiley.com/doi/pdfdirect/10.1111/1468-5973.70227",
+      "k": [
+        "Crisis communication",
+        "Content analysis",
+        "Risk communication",
+        "Social media",
+        "Crisis response",
+        "Emergency management",
+        "Emergency response",
+        "Crisis management"
+      ],
+      "abs": "This study examines official crisis communication on X during the 2025 Los Angeles wildfires through the Crisis and Emergency Risk Communication (CERC) framework. Using a human‐coded content analysis of 973 posts from 13 official institutional accounts, messages were classified by communication type and mapped across the crisis lifecycle: pre‐crisis, initial, maintenance, resolution, and evaluation. The presence of crisis‐related information was analyzed, as was whether posts were primarily instructive or reassuring/empathetic. Audience engagement was also assessed by using platform‐generated metrics, including likes, retweets, and replies. Frequency of communication peaked during the initial and maintenance stages and was dominated by informational and instructive content. However, the messages that generated the strongest public response were not the most common. Welch's ANOVAs revealed that reassuring and empathetic posts received significantly more likes (nearly twice the average of instructive posts) and replies than instructive posts, despite being used less frequently. By comparing what agencies posted most against what audiences engaged with most across the crisis lifecycle, this study identifies a disconnect between wildfire message strategy and public response, offering practical insights for improving emergency communication on social media.",
+      "cat": "话语与危机",
+      "ts": "2026-09-22 07:23"
+    },
     {
       "doi": "10.1177/17504813261483852",
       "t": "The dialectics of menopause inequity: Intersections of normalising and pathologising discourses of menopause in migrant domestic workers’ narratives",
