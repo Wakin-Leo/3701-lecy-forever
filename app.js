@@ -238,7 +238,10 @@
     if (S.oaOnly && w.oa === "closed") return false;
     if (S.unreadOnly && isRead(w.doi)) return false;
     if (S.query) {
-      var hay = (w.t + " " + (w.abs || "") + " " + (w.k || []).join(" ")).toLowerCase();
+      var jname = (S.jBySlug[w._slug] && S.jBySlug[w._slug].name) || w._j || w.j || "";
+      var flabel = FIELD_LABEL[JFIELD[w._slug] || "other"] || "";
+      var hay = (w.t + " " + (w.abs || "") + " " + (w.k || []).join(" ") +
+                 " " + jname + " " + flabel).toLowerCase();
       if (hay.indexOf(S.query) < 0) return false;
     }
     return true;
@@ -252,6 +255,27 @@
       return Array.from(S.activeJournals)[0];
     }
     return null;
+  }
+
+  /* journal-filter persistence (this browser) */
+  var FILTER_KEY = "dd_filter_v1";
+  function saveFilter() {
+    try {
+      if (S.activeJournals && S.activeJournals.size) {
+        localStorage.setItem(FILTER_KEY, JSON.stringify(Array.from(S.activeJournals)));
+      } else {
+        localStorage.removeItem(FILTER_KEY);
+      }
+    } catch (e) { /* ignore */ }
+  }
+  function restoreFilter() {
+    try {
+      var arr = JSON.parse(localStorage.getItem(FILTER_KEY) || "null");
+      if (arr && arr.length) {
+        var valid = arr.filter(function (s) { return S.jBySlug[s]; });
+        if (valid.length) S.activeJournals = new Set(valid);
+      }
+    } catch (e) { /* ignore */ }
   }
 
   function renderChips() {
@@ -269,11 +293,13 @@
     FIELD_ORDER.forEach(function (f) {
       var js = groups[f];
       if (!js || !js.length) return;
+      var groupOn = !!(S.activeJournals && S.activeJournals.size === js.length &&
+        js.every(function (j) { return S.activeJournals.has(j.slug); }));
       var wrap = document.createElement("div");
       wrap.className = "fgroup";
       var chip = document.createElement("button");
       var anyOn = js.some(function (j) { return !S.activeJournals || S.activeJournals.has(j.slug); });
-      chip.className = "chip fchip" + (anyOn && solo ? " on" : "");
+      chip.className = "chip fchip" + ((anyOn && solo) || groupOn ? " on" : "");
       chip.innerHTML = esc(FIELD_LABEL[f]) + ' <span class="caret">▾</span>';
       chip.onclick = function (e) {
         e.stopPropagation();
@@ -283,9 +309,21 @@
       };
       var panel = document.createElement("div");
       panel.className = "fpanel";
+      var gall = document.createElement("button");
+      gall.className = "fjournal fall" + (groupOn ? " on" : "");
+      gall.innerHTML = '<span class="dot" style="background:var(--accent)"></span>整组：' +
+        esc(FIELD_LABEL[f]) + "（" + js.length + " 刊）";
+      gall.onclick = function (e) {
+        e.stopPropagation();
+        S.activeJournals = groupOn ? null : new Set(js.map(function (j) { return j.slug; }));
+        saveFilter();
+        document.querySelectorAll(".fgroup.open").forEach(function (g) { g.classList.remove("open"); });
+        renderChips(); renderLatest();
+      };
+      panel.appendChild(gall);
       js.forEach(function (j) {
         var b = document.createElement("button");
-        b.className = "fjournal" + (solo === j.slug ? " on" : "");
+        b.className = "fjournal" + (S.activeJournals && S.activeJournals.has(j.slug) ? " on" : "");
         b.innerHTML = '<span class="dot" style="background:' + S.jColor[j.slug] + '"></span>' + esc(j.name);
         b.onclick = function (e) {
           e.stopPropagation();
@@ -294,6 +332,7 @@
           } else {
             S.activeJournals = new Set([j.slug]);
           }
+          saveFilter();
           document.querySelectorAll(".fgroup.open").forEach(function (g) { g.classList.remove("open"); });
           renderChips(); renderLatest();
         };
@@ -304,14 +343,26 @@
       box.appendChild(wrap);
     });
 
-    // active single-journal filter indicator
-    if (solo) {
-      var j = S.manifest.journals.filter(function (x) { return x.slug === solo; })[0];
+    // active filter indicator (single journal / whole field / custom set)
+    if (S.activeJournals) {
+      var label;
+      if (solo) {
+        var j0 = S.manifest.journals.filter(function (x) { return x.slug === solo; })[0];
+        label = "仅看：" + (j0 ? j0.name : solo);
+      } else {
+        var fset = {};
+        S.activeJournals.forEach(function (s) { fset[JFIELD[s] || "other"] = true; });
+        var fk = Object.keys(fset);
+        label = fk.length === 1
+          ? "仅看：" + FIELD_LABEL[fk[0]] + "（" + S.activeJournals.size + " 刊）"
+          : "仅看：已选 " + S.activeJournals.size + " 刊";
+      }
       var ind = document.createElement("button");
       ind.className = "chip filter-ind";
-      ind.innerHTML = "仅看：" + esc(j ? j.name : solo) + " ✕";
+      ind.innerHTML = esc(label) + " ✕";
       ind.onclick = function () {
         S.activeJournals = null;
+        saveFilter();
         renderChips(); renderLatest();
       };
       box.appendChild(ind);
@@ -356,7 +407,41 @@
       var nToday = all.filter(function (w) { return w.d === today; }).length;
       $("stats").textContent = "近 " + S.recentDays + " 天共 " + shown.length +
         " 条" + (nToday ? " · 今日新增 " + nToday + " 条" : "");
-      renderGrouped(shown, container, jmap);
+      // 今日新增单独成区（可折叠，默认展开），其余按日期流排列
+      var todayItems = shown.filter(function (w) { return w.d === today; });
+      var earlier = shown.filter(function (w) { return w.d !== today; });
+      container.innerHTML = "";
+      if (todayItems.length) {
+        var det = document.createElement("details");
+        det.className = "today-block";
+        det.open = true;
+        var sum = document.createElement("summary");
+        sum.innerHTML = "今日新增 <span class=\"tb-n\">" + todayItems.length + "</span> 条";
+        det.appendChild(sum);
+        var inner = document.createElement("div");
+        inner.className = "today-items";
+        var th = "";
+        todayItems.forEach(function (w) {
+          w._j = jmap[w._slug] || w.j || "";
+          S.workIndex[w.doi] = w;
+          th += entryHtml(w, w._j);
+        });
+        inner.innerHTML = th;
+        det.appendChild(inner);
+        container.appendChild(det);
+        translateTitles(inner);
+        if (earlier.length) {
+          var sep = document.createElement("div");
+          sep.className = "date-head";
+          sep.textContent = "更早";
+          container.appendChild(sep);
+        }
+      }
+      if (earlier.length || !todayItems.length) {
+        var rest = document.createElement("div");
+        container.appendChild(rest);
+        renderGrouped(earlier.length ? earlier : shown, rest, jmap);
+      }
       var lm = $("load-more");
       lm.hidden = false;
       lm.style.display = "block";
@@ -1400,6 +1485,7 @@
       $("site-title").textContent = S.config.title || "Daily Digest";
       $("updated-line").textContent = "数据更新至 " + m.updated +
         " · 收录 " + m.journals.length + " 种期刊";
+      restoreFilter();
       renderChips();
       initArchive();
       S.minYear = 9999;
