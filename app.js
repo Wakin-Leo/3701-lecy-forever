@@ -801,12 +801,39 @@
         esc(apaAuthors(x.a)) + " (" + esc((x.d || "").slice(0, 4)) + '). <a href="https://doi.org/' + esc(x.doi) +
         '" target="_blank" rel="noopener">' + esc(x.t) + "</a>. <i>" + esc(x.j) + "</i>.</div>";
       hs.forEach(function (h) {
+        var idx = S.highlights.items.indexOf(h);
         html += '<div class="note-quote">' + esc(h.text) +
-          '<span class="nq-time">划线于 ' + esc(h.ts) + "</span></div>";
+          '<span class="nq-time">划线于 ' + esc(h.ts) +
+          '<button class="nq-del" data-idx="' + idx + '" title="删除这条划线">删除</button>' +
+          "</span></div>";
       });
       html += "</div>";
     });
     box.innerHTML = html;
+  }
+
+  /* delete one highlight; syncs notes view + user/highlights.json + notes/摘要笔记.md */
+  function deleteHighlight(idx) {
+    if (!requireToken()) return;
+    var h = S.highlights.items[idx];
+    if (!h) return;
+    if (!confirm("删除这条划线笔记？\n\n" + h.text.slice(0, 80) + (h.text.length > 80 ? "…" : ""))) return;
+    S.highlights.items.splice(idx, 1);
+    toast("保存中…", true);
+    ghGetFile("user/highlights.json").then(function (f) {
+      return ghPutRaw("user/highlights.json", JSON.stringify(S.highlights, null, 2),
+        f && f.sha, "note: delete highlight");
+    }).then(function () {
+      return ghGetFile("notes/摘要笔记.md").then(function (f2) {
+        return ghPutRaw("notes/摘要笔记.md", notesMd(), f2 && f2.sha, "note: sync 摘要笔记");
+      });
+    }).then(function () {
+      toast("已删除");
+      if (S.route === "notes") renderNotes();
+    }).catch(function (e) {
+      toast("删除失败：" + e.message);
+      renderNotes();
+    });
   }
 
   /* ---------- diary ---------- */
@@ -1390,6 +1417,12 @@
     // read toggle
     if (t.classList && t.classList.contains("read-toggle")) {
       setRead(t.dataset.doi, !isRead(t.dataset.doi));
+      return;
+    }
+
+    // delete a highlight note
+    if (t.classList && t.classList.contains("nq-del")) {
+      deleteHighlight(parseInt(t.dataset.idx, 10));
       return;
     }
 

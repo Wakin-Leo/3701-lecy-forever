@@ -245,6 +245,13 @@ button.danger:hover { border-color: #a4362e; }
   font-size: 13.5px; color: var(--ink-soft); line-height: 1.7;
 }
 .note-quote .nq-time { display: block; font-size: 11.5px; color: var(--muted); margin-top: 7px; }
+.nq-del {
+  border: 0; background: none; padding: 0 2px; margin-left: 10px;
+  font-size: 11.5px; color: var(--muted); cursor: pointer; opacity: .55;
+  border-bottom: 1px dotted transparent; transition: all .15s;
+}
+.note-quote:hover .nq-del { opacity: 1; }
+.nq-del:hover { color: #a4362e; border-bottom-color: #a4362e; }
 
 /* ---------- diary ---------- */
 .diary-block {
