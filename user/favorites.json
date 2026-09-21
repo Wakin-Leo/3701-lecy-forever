@@ -50,7 +50,8 @@
         "Gender relations"
       ],
       "cat": "性别",
-      "ts": "2026-09-20 21:32"
+      "ts": "2026-09-20 21:32",
+      "abs": "The United Nations' fifth Sustainable Development Goal calls for gender equality and empowerment. Gender budgeting (GB) has been proposed as a potential mechanism to reduce gender disparities. This is a novel approach to budgeting that considers the impact of public spending on women and other underrepresented groups. Despite its growing popularity, spreading to over 80 countries since its launch in the 1980s, the effectiveness of GB remains less understood. This study tests whether GB has led to tangible improvements in women's well‐being, equality, and empowerment. We use an event study research design with staggered adoption to analyze data across 47 countries from 2000 to 2023. Our analyses of average and heterogeneous treatment effects reveal short‐ and long‐term impacts; notably, we find significant reductions in maternal mortality ratios and adolescent birth rates, as well as improvements in women's political empowerment."
     },
     {
       "doi": "10.1111/padm.70079",
@@ -76,7 +77,8 @@
         "Good governance"
       ],
       "cat": "算法治理",
-      "ts": "2026-09-20 21:26"
+      "ts": "2026-09-20 21:26",
+      "abs": "Governments at all levels are grappling with AI's implications for public administration. Because federal actions often establish the principles guiding wider governance efforts, this study asks how US federal AI policies reflect—or fail to reflect—core public values. Drawing on a dataset of US federal AI policies from 2020 to 2023, we systematically analyze the risks, harms, and governance strategies employed across government‐issued and enacted policy documents. Specifically, we analyze 120 discrete policy sections or subsections of federal laws and regulations, utilizing the parsing approach of the AI Governance and Regulatory Archive (AGORA), all of which regulate the operation of the government itself rather than private sector behavior. We develop a theoretical and empirical crosswalk linking AI‐related risks and harms to prominent public values. Results indicate that while values such as individual rights, the common good, and accountability are regularly invoked, additional guidance around public values like citizen engagement, workplace standards, and responsiveness may be necessary to prevent public value failure. The study further categorizes governance strategies in AI policy documents into regulatory, service‐based, and informational instruments, and finds that regulatory policies are most likely to engage with public values."
     },
     {
       "doi": "10.1111/padm.70092",
@@ -99,7 +101,8 @@
         "Set (abstract data type)"
       ],
       "cat": "算法治理",
-      "ts": "2026-09-20 21:25"
+      "ts": "2026-09-20 21:25",
+      "abs": "Responsible algorithmization refers to the use of algorithms in the public sector while safeguarding public values. Approaches to responsible algorithmization suggested by the EU, OECD, and others depart from a rational perspective and highlight formal structures and procedures. This paper complements this perspective by adding a “natural perspective,” which emphasizes sense‐making and actual practices. This natural perspective is used for a set of ethnographic studies of algorithmization in three domains in the Netherlands: regulation, policing, and healthcare. Our findings show that algorithmization of government organizations is an emergent, political, open, and fragmented process, rather than, as assumed by rational approaches to responsible algorithmization, pre‐structured, neutral, closed, and simple. This means that rational approaches fall short of providing a comprehensive basis for establishing responsible algorithmization. We conclude that not only passive responsibility but also active responsibility for algorithmization in the public sector needs to be addressed to safeguard public values."
     },
     {
       "doi": "10.1111/padm.70095",
@@ -123,7 +126,8 @@
         "Digital government"
       ],
       "cat": "政府回应",
-      "ts": "2026-09-20 21:24"
+      "ts": "2026-09-20 21:24",
+      "abs": "Faced with diverse and complex demands from citizens, the government has consistently sought ways to enhance its ability to respond. Metaphorically, citizens' needs can be viewed as locks, and the government requires keys to unlock them. Artificial intelligence (AI) is an innovative new key offering a fresh paradigm for unlocking the door to high citizen satisfaction. Drawing on government responsiveness theory, this study applies a 2 × 3 between‐subjects survey experiment to explore the impact of government response methods (traditional responses, AI‐enabled responses) and citizen demand types (consultation, complaint/help‐seeking, suggestions) on citizen satisfaction. Findings show that AI‐enabled government responses significantly increase citizen satisfaction compared to traditional approaches. Among demand types, consultation yields the highest satisfaction, while suggestion results in the lowest. Further, the satisfaction level is significantly influenced by the interaction effect between response method and demand type. Perceived fairness mediates the relationship between government responses and citizen satisfaction, with citizen participation experience having a moderating effect. This study offers new insights into increasing citizen satisfaction from the perspective of government responses. It reveals the content‐dependent nature of AI‐enabled government responses, helping the government create unique AI response strategies and enhance digital interaction with citizens."
     }
   ]
 }
