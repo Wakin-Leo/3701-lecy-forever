@@ -387,3 +387,20 @@ button.danger:hover { border-color: #a4362e; }
 }
 .cite-btn:hover { color: var(--accent); border-color: var(--accent); }
 .pdf-link { font-weight: 600; }
+
+/* ---------- today block ---------- */
+.today-block {
+  background: var(--card); border: 1px solid #d8c08a; border-radius: 12px;
+  padding: 2px 6px 10px; margin: 6px 0 10px; box-shadow: var(--shadow);
+}
+.today-block > summary {
+  cursor: pointer; list-style: none; user-select: none; outline: none;
+  font-family: var(--serif); font-size: 14px; font-weight: 600; color: #7a5c1e;
+  padding: 12px 12px 4px; display: flex; align-items: center; gap: 8px;
+}
+.today-block > summary::before { content: "▸"; font-size: 11px; transition: transform .15s; }
+.today-block[open] > summary::before { transform: rotate(90deg); }
+.today-block .tb-n { color: #b98a2f; font-size: 16px; }
+.today-items { padding: 4px 8px 0; }
+.today-items .entry:last-child { margin-bottom: 2px; }
+.fjournal.fall { border-bottom: 1px dashed var(--line); border-radius: 7px 7px 0 0; font-weight: 600; }
