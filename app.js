@@ -1554,6 +1554,8 @@
       });
       loadUserJson("highlights", S.highlights).then(function (d) {
         if (d && d.items) S.highlights = d;
+        // highlights arrive async; re-render if the user landed on #notes directly
+        if (S.route === "notes") renderNotes();
       });
       loadUserJson("diary", S.diary).then(function (d) {
         if (d && d.items) { S.diary = d; renderDiary(); }
