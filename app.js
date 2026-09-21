@@ -19,7 +19,11 @@
     "jesp": "psych",
     "das": "ling", "jlp": "ling", "appl-ling": "ling", "ling-typ": "ling",
     "appl-corpus-ling": "ling", "j-socioling": "ling", "cds": "ling",
-    "jlsp": "ling", "ijld": "ling", "discourse-edu": "ling"
+    "jlsp": "ling", "ijld": "ling", "discourse-edu": "ling",
+    "lang-soc": "ling", "disc-comm": "ling", "disc-studies": "ling",
+    "soc-sem": "ling", "j-prag": "ling",
+    "jccm": "pa",
+    "risk-anal": "other"
   };
 
   var S = {

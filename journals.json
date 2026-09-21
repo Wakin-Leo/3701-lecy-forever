@@ -21,6 +21,13 @@
     { "slug": "reg-gov",    "name": "Regulation & Governance",                            "issns": ["1748-5983", "1748-5991"], "publisher": "Wiley" },
     { "slug": "policy-sci", "name": "Policy Sciences",                                    "issns": ["0032-2687", "1573-0891"], "publisher": "Springer" },
     { "slug": "ijld",       "name": "International Journal of Legal Discourse",           "issns": ["2364-8821", "2364-883X"], "publisher": "De Gruyter" },
-    { "slug": "discourse-edu", "name": "Discourse: Studies in the Cultural Politics of Education", "issns": ["0159-6306", "1469-3739"], "publisher": "Taylor & Francis" }
+    { "slug": "discourse-edu", "name": "Discourse: Studies in the Cultural Politics of Education", "issns": ["0159-6306", "1469-3739"], "publisher": "Taylor & Francis" },
+    { "slug": "lang-soc",   "name": "Language in Society",                                "issns": ["0047-4045", "1469-8013"], "publisher": "Cambridge University Press" },
+    { "slug": "disc-comm",  "name": "Discourse & Communication",                          "issns": ["1750-4813", "1750-4821"], "publisher": "SAGE" },
+    { "slug": "disc-studies", "name": "Discourse Studies",                                "issns": ["1461-4456", "1461-7080"], "publisher": "SAGE" },
+    { "slug": "soc-sem",    "name": "Social Semiotics",                                   "issns": ["1035-0330", "1470-1219"], "publisher": "Routledge" },
+    { "slug": "jccm",       "name": "Journal of Contingencies and Crisis Management",     "issns": ["0966-0879", "1468-5973"], "publisher": "Wiley" },
+    { "slug": "risk-anal",  "name": "Risk Analysis",                                      "issns": ["0272-4332", "1539-6924"], "publisher": "Wiley" },
+    { "slug": "j-prag",     "name": "Journal of Pragmatics",                              "issns": ["0378-2166", "1879-1387"], "publisher": "Elsevier" }
   ]
 }
