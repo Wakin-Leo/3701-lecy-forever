@@ -1246,14 +1246,18 @@
   }
 
   function trChat(cfg, prompt) {
+    var body = {
+      model: cfg.model,
+      messages: [{ role: "user", content: prompt }],
+      temperature: 0.2
+    };
+    // SiliconFlow hybrid-thinking models default to thinking on, which is slow;
+    // disable it explicitly (ignored harmlessly by providers that don't know it)
+    if (cfg.base.indexOf("siliconflow.cn") >= 0) body.enable_thinking = false;
     return fetch(cfg.base, {
       method: "POST",
       headers: { "Content-Type": "application/json", "Authorization": "Bearer " + cfg.key },
-      body: JSON.stringify({
-        model: cfg.model,
-        messages: [{ role: "user", content: prompt }],
-        temperature: 0.2
-      })
+      body: JSON.stringify(body)
     }).then(function (r) {
       if (!r.ok) throw new Error("HTTP " + r.status);
       return r.json();
