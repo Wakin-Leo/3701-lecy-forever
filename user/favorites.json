@@ -11,6 +11,35 @@
   ],
   "items": [
     {
+      "doi": "10.1007/s11077-019-09361-3",
+      "t": "From path dependence to policy mixes for Nordic electric mobility: Lessons for accelerating future transport transitions",
+      "a": [
+        "Kirsi Kotilainen",
+        "Pami Aalto",
+        "Jussi Valta",
+        "Antti Rautiainen",
+        "Matti Kojo",
+        "Benjamin K. Sovacool"
+      ],
+      "d": "2019-11-07",
+      "j": "Policy Sciences",
+      "oa": "hybrid",
+      "url": "https://link.springer.com/content/pdf/10.1007/s11077-019-09361-3.pdf",
+      "k": [
+        "Path dependence",
+        "Industrial organization",
+        "Electricity",
+        "Economic system",
+        "Path dependent",
+        "Lock (firearm)",
+        "Business",
+        "Historical institutionalism"
+      ],
+      "abs": "We examine the problem of how to accelerate policies related to electric vehicles (EVs) in the Nordic countries Denmark, Finland, Norway and Sweden. These four Nordic countries represent an interesting collection of cases by virtue of having common decarbonization targets extending to the transport sector, interlinked electric energy systems and a joint electricity market largely based on low-carbon energy while they are open societies bent on innovation, making them well adaptable to a transition toward electric mobility. Our analytical framework drawing from transition research, lock-in and path dependency and institutionalism enables us to discern technological, institutional and behavioral mechanisms which can have both constraining and enabling effects vis-à-vis this transition by means of shaping national socio-technical systems and regimes. On this basis, we also discuss how to develop policies accelerating the transition. We find that the incumbent industries can shape policy choice through the lock-in into institutional inter-dependencies. The accumulation of social and material features, and vested interests of actors, for its part can maintain regime level inertia, impeding the transition. Yet, technological lock-in can also enable EVs, by means of learning effects from technologically interrelated wind energy projects and available infrastructure in buildings that support the EV charging needs. Overall, the complexity of path-dependent mechanisms embedded in the dominant regimes, together with the diversity of emerging policy mixes, demands attention both on the technologies and broader socio-technical systems in order to properly assess the prospects of transition toward electric mobility.",
+      "cat": "历史制度主义",
+      "ts": "2026-09-22 19:44"
+    },
+    {
       "doi": "10.1111/gove.70152",
       "t": "Why Some Critical Junctures Lead Nowhere: Exploring Dynamic and Static Policy Paths",
       "a": [
