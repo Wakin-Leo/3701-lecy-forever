@@ -387,6 +387,8 @@ button.danger:hover { border-color: #a4362e; }
 .read-toggle.on {
   opacity: 1; border-color: #d8c08a; background: #f7efdd; color: #7a5c1e; font-weight: 600;
 }
+.entry.is-read { opacity: .68; }
+.entry.is-read:hover, .entry.is-read:focus-within { opacity: 1; }
 .entry-title { padding-right: 74px; }
 .cite-btn {
   border: 1px solid var(--line); background: var(--card); border-radius: 5px;

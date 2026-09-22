@@ -721,8 +721,9 @@
     });
     if (readSaveTimer) clearTimeout(readSaveTimer);
     readSaveTimer = setTimeout(saveRead, 2000);
-    // with "仅看未读" on, drop the entry from the list immediately
-    if (S.unreadOnly) { renderLatest(); renderArchive(); }
+    // "仅看未读" 模式下不立即重渲染：已读条目留在原地（变淡、带已读标），
+    // 下次切换筛选/刷新页面时才被隐藏，避免读着读着文章消失。
+    if (S.unreadOnly && on) toast("已标为已读，刷新或重新勾选「仅看未读」后隐藏");
   }
 
   function saveRead() {
