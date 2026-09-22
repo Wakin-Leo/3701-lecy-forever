@@ -11,6 +11,34 @@
   ],
   "items": [
     {
+      "doi": "10.1080/14719037.2020.1865440",
+      "t": "The evolutionary trajectory of social enterprises in the Czech Republic and Slovakia",
+      "a": [
+        "Michal Plaček",
+        "Gabriela Vaceková",
+        "Mária Murray Svidroňová",
+        "Juraj Nemec",
+        "Gabriela Korimová"
+      ],
+      "d": "2021-01-03",
+      "j": "Public Management Review",
+      "oa": "green",
+      "url": "https://is.muni.cz/publication/1733616/PMRProof_hi.pdf",
+      "k": [
+        "Czech",
+        "Convergence (economics)",
+        "Historical institutionalism",
+        "Politics",
+        "Legislation",
+        "Institutionalism",
+        "Economic system",
+        "Communist state"
+      ],
+      "abs": "The paper contributes to the research on social enterprises. Based on historical institutionalism, we map the evolution of social enterprises in the Czech Republic and Slovakia after the collapse of communist rule. The findings indicate that the historical-evolutionary trajectories differ, despite their common path during the totalitarian regime. There is some convergence based on significant political changes that resulted mostly in the need to create integrated legislation and to reflect the common European policy; the divergent trends occur after exogenous economic shocks, the effects of which might result from the differing initial macroeconomic situations in both countries.",
+      "cat": "历史制度主义",
+      "ts": "2026-09-22 19:44"
+    },
+    {
       "doi": "10.1111/puar.13224",
       "t": "Australian Quarantine Policy: From Centralization to Coordination with Mid‐Pandemic COVID‐19 Shifts",
       "a": [
