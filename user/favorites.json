@@ -6,9 +6,34 @@
     "算法治理",
     "性别",
     "话语政治",
-    "话语与危机"
+    "话语与危机",
+    "历史制度主义"
   ],
   "items": [
+    {
+      "doi": "10.1111/gove.70152",
+      "t": "Why Some Critical Junctures Lead Nowhere: Exploring Dynamic and Static Policy Paths",
+      "a": [
+        "Katrine Skagen"
+      ],
+      "d": "2026-08-31",
+      "j": "Governance",
+      "oa": "hybrid",
+      "url": "https://doi.org/10.1111/gove.70152",
+      "k": [
+        "Framing (construction)",
+        "Climate change",
+        "Path dependence",
+        "Lead (geology)",
+        "Climate policy",
+        "Process (computing)",
+        "Policy analysis",
+        "Public policy"
+      ],
+      "abs": "Some critical junctures fail to cause significant change in practice. Inspired by historical institutionalism, this article develops the concept of dynamic and static policy paths to explain why some critical junctures do not lead to change, while others do. Combining insights from policy process literature and policy implementation, it conceptualizes critical junctures through four elements: framing, targets, instruments, and actors/institutions. Based on two case studies, the article argues that the importance of framing and targets has been overexaggerated, and that a dynamic path will not occur unless there is also a significant change in instruments and actors/institutions. In Denmark, a climate policy agreement created a new policy direction for agriculture in which climate policy is a key component. In Norway, a climate policy agreement did not change the trajectory of sectoral policy and climate policy development has remained stagnant. Thus, differences in the critical junctures led to different policy paths.",
+      "cat": "历史制度主义",
+      "ts": "2026-09-22 19:32"
+    },
     {
       "doi": "10.1111/1468-5973.70227",
       "t": "What Agencies Post vs. What the Public Engages With: A CERC Analysis of Crisis Messaging on X During the 2025 Los Angeles Wildfires",
