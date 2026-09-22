@@ -11,6 +11,32 @@
   ],
   "items": [
     {
+      "doi": "10.1111/gove.12902",
+      "t": "A step forward to gender equality: Breaking the political glass ceiling at local level",
+      "a": [
+        "B. Ribeiro",
+        "Miguel Rodrigues",
+        "Francisca Tejedo Romero"
+      ],
+      "d": "2024-10-01",
+      "j": "Governance",
+      "oa": "closed",
+      "url": "https://doi.org/10.1111/gove.12902",
+      "k": [
+        "Glass ceiling",
+        "Ceiling (cloud)",
+        "Politics",
+        "Gender equality",
+        "Political science",
+        "Gender studies",
+        "Demographic economics",
+        "Sociology"
+      ],
+      "abs": "Gender quota policies have the ability to alleviate the scarcity of women in politics. However, opponents of quotas argue that such policies may constitute, in the long term, a “glass ceiling.” In Portugal, although there is still a long way to go in terms of gender equality, some municipalities have been successful in electing many women. Therefore, the aim of this article is to investigate, through the lenses of historical institutionalism and contagion theory, the factors that help women break out of the glass ceiling trap at local level. The study is based on a dataset from the last local elections and uses a panel data regression to calculate the probabilities of electing more women to municipal councils. The results underline that left‐wing parties that have adopted voluntary quotas, municipal experience with women mayors, and competitive environments increase the likelihood of electing more women. Gender equality.",
+      "cat": "历史制度主义",
+      "ts": "2026-09-22 19:45"
+    },
+    {
       "doi": "10.1111/padm.13016",
       "t": "Cross‐sectoral collaboration in times of crisis: Comparing the Czech Republic , Slovakia , and Poland",
       "a": [
