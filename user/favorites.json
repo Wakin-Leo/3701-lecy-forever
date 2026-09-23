@@ -11,6 +11,27 @@
   ],
   "items": [
     {
+      "doi": "10.1007/s11077-026-09631-x",
+      "t": "Public policymaking under uncertain time horizons: cyclicality, synchronization, and temporal delegation",
+      "a": [
+        "Radu-Mihai Triculescu"
+      ],
+      "d": "2026-09-21",
+      "j": "Policy Sciences",
+      "oa": "hybrid",
+      "url": "https://doi.org/10.1007/s11077-026-09631-x",
+      "k": [
+        "Delegate",
+        "Delegation",
+        "Directive",
+        "Horizon",
+        "Face (sociological concept)"
+      ],
+      "abs": "What form does public policymaking take when actors cannot tell whether they face a short emergency, a medium-term episode, or a protracted transformation? Theories of cooperation and intertemporal choice assume time horizons that are either fixed or effectively indefinite, yet in many policy domains actors cannot specify how long a problem will last nor whether it will intensify, stabilize, or recede. Under such uncertainty, policymakers rely on short, repeatable policy cycles anchored in established calendars such as budgets and elections, a pattern conceptualized here as cyclicality. Two further mechanisms follow. Where implementation is dispersed across actors whose circumstances the center cannot observe, officials delegate authority over timing; where they delegate, they require synchronizers to keep dispersed cycles aligned, though horizon uncertainty caps how binding that coordination can be. Evidence from legal documents and semi-structured interviews tracks these mechanisms across four episodes of Romania’s implementation of the EU Temporary Protection Directive after Russia’s invasion of Ukraine. Officials sustained cooperation without resolving the underlying uncertainty, settling into an extended present that remained procedurally stable at the center while producing uneven temporal experiences at the periphery.",
+      "cat": "历史制度主义",
+      "ts": "2026-09-23 11:34"
+    },
+    {
       "doi": "10.1111/rego.70096",
       "t": "Proactive State Involvement and Institutional Layering in Social Media Regulation: The Case of South Korea",
       "a": [
