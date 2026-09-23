@@ -61,6 +61,17 @@
           <option value="full">标题+摘要</option>
           <option value="title">仅标题</option>
         </select>
+        <select id="search-years" title="时间范围（仅搜索时生效）">
+          <option value="">全部时间</option>
+          <option value="0:4">近 1–5 年</option>
+          <option value="5:9">近 6–10 年</option>
+          <option value="10:14">近 11–15 年</option>
+          <option value="15:19">近 16–20 年</option>
+          <option value="20:24">近 21–25 年</option>
+          <option value="25:29">近 26–30 年</option>
+          <option value="30:9999">31 年及以上</option>
+        </select>
+        <button id="sem-btn" class="sem-btn" title="用语义相似度搜索当前筛选范围（需硅基流动 Key）">语义搜索</button>
         <label class="oa-toggle"><input type="checkbox" id="unread-only"> 仅看未读</label>
       </div>
       <div id="journal-chips" class="chips"></div>

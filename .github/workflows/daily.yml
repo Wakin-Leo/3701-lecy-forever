@@ -27,6 +27,8 @@ jobs:
         with:
           python-version: "3.12"
       - name: fetch metadata
+        env:
+          SILICONFLOW_API_KEY: ${{ secrets.SILICONFLOW_API_KEY }}
         run: python fetch.py all
       - name: commit data
         run: |

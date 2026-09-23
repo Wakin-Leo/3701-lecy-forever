@@ -397,6 +397,21 @@ button.danger:hover { border-color: #a4362e; }
 .cite-btn:hover { color: var(--accent); border-color: var(--accent); }
 .pdf-link { font-weight: 600; }
 
+/* ---------- semantic search ---------- */
+.sem-btn { border-color: #c6d4e6; color: var(--accent); font-weight: 600; white-space: nowrap; }
+.sem-btn:hover { background: var(--accent-soft); }
+.sem-btn:disabled { opacity: .5; cursor: wait; }
+.sem-banner {
+  background: #f7efdd; border: 1px solid #d8c08a; border-radius: 10px;
+  padding: 10px 16px; margin-bottom: 12px; font-size: 13px; color: #7a5c1e;
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+}
+.sem-banner button { padding: 3px 12px; font-size: 12px; margin-left: auto; }
+.sem-score {
+  border-radius: 5px; padding: 2px 8px; font-size: 11.5px; font-weight: 600;
+  background: #f7efdd; color: #7a5c1e; border: 1px solid #e5d3ab;
+}
+
 /* ---------- today block ---------- */
 .today-block {
   background: var(--card); border: 1px solid #d8c08a; border-radius: 12px;

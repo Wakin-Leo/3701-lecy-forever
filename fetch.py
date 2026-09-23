@@ -14,6 +14,7 @@ Data layout (repo root):
   data/state.json          internal state (backfill progress)
 """
 import json
+import math
 import os
 import sys
 import time
@@ -225,6 +226,89 @@ def source_stats(issn):
     return {"m2": round(m2, 1) if m2 is not None else None, "h": s.get("h_index")}
 
 
+# ---------- title embeddings for semantic search (optional) ----------
+
+EMB_URL = "https://api.siliconflow.cn/v1/embeddings"
+EMB_MODEL = "BAAI/bge-m3"
+EMB_DIM = 1024
+EMB_BATCH = 32
+EMB_KEY = os.environ.get("SILICONFLOW_API_KEY", "")
+
+
+def emb_path(slug, year):
+    return os.path.join(DATA, "emb", slug, f"{year}.json")
+
+
+def embed_batch(texts, key):
+    """POST texts to the embeddings endpoint; splits the batch on API errors."""
+    if not texts:
+        return []
+    payload = {"model": EMB_MODEL, "input": texts}
+    req = urllib.request.Request(
+        EMB_URL, data=json.dumps(payload).encode("utf-8"),
+        headers={"Content-Type": "application/json",
+                 "Authorization": "Bearer " + key})
+    try:
+        with urllib.request.urlopen(req, timeout=120) as resp:
+            data = json.load(resp)
+        return [d["embedding"] for d in sorted(data["data"], key=lambda x: x["index"])]
+    except Exception as exc:  # noqa: BLE001
+        if len(texts) == 1:
+            print(f"  embedding failed for one title: {exc}")
+            return [None]
+        mid = len(texts) // 2
+        print(f"  embedding batch of {len(texts)} failed ({exc}); splitting")
+        return embed_batch(texts[:mid], key) + embed_batch(texts[mid:], key)
+
+
+def quantize_b64(vec):
+    """Unit-normalize, then int8-quantize; returns base64 of the raw bytes."""
+    import array
+    import base64
+    norm = math.sqrt(sum(x * x for x in vec)) or 1.0
+    q = array.array("b", (max(-127, min(127, int(round(x / norm * 127)))) for x in vec))
+    return base64.b64encode(q.tobytes()).decode("ascii")
+
+
+def embed_journal(slug, key):
+    """Embed titles of all works of one journal that lack an embedding."""
+    jdir = os.path.join(DATA, slug)
+    if not os.path.isdir(jdir):
+        return 0
+    todo = {}  # year -> [(doi, title)]
+    for fn in sorted(os.listdir(jdir)):
+        if not (fn.endswith(".json") and fn[:4].isdigit()):
+            continue
+        year = fn[:4]
+        have = set(load_json(emb_path(slug, year), {"items": {}})["items"])
+        for w in load_json(os.path.join(jdir, fn), []):
+            if w.get("doi") and w.get("t") and w["doi"] not in have:
+                todo.setdefault(year, []).append((w["doi"], w["t"]))
+    n = 0
+    for year, pairs in sorted(todo.items()):
+        shard = load_json(emb_path(slug, year), {"dim": EMB_DIM, "items": {}})
+        for i in range(0, len(pairs), EMB_BATCH):
+            chunk = pairs[i:i + EMB_BATCH]
+            vecs = embed_batch([t for _, t in chunk], key)
+            for (doi, _), vec in zip(chunk, vecs):
+                if vec:
+                    shard["items"][doi] = quantize_b64(vec)
+                    n += 1
+            time.sleep(0.2)
+        save_json(emb_path(slug, year), shard)
+    return n
+
+
+def embed_all_pending(journals):
+    if not EMB_KEY:
+        print("[embed] SILICONFLOW_API_KEY not set; skipping embeddings")
+        return
+    for j in journals:
+        n = embed_journal(j["slug"], EMB_KEY)
+        if n:
+            print(f"[embed] {j['slug']}: {n} titles embedded", flush=True)
+
+
 def rebuild_manifest(journals):
     manifest = {"updated": date.today().isoformat(), "journals": []}
     for j in journals:
@@ -274,6 +358,7 @@ def main():
             n = upsert_works(j["slug"], works)
             print(f"  -> {n} records merged")
 
+    embed_all_pending(journals)
     rebuild_manifest(journals)
     print("manifest rebuilt")
 

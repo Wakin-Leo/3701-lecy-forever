@@ -44,6 +44,8 @@
     activeJournals: null,
     query: "",
     searchScope: "full",   // "full" = 标题+摘要+关键词+刊名；"title" = 仅标题
+    yearRange: "",         // "" 或 "lo:hi"（距今年数，仅搜索时生效）
+    semActive: false,      // 语义搜索结果是否正占据着 latest 列表
     unreadOnly: false,
     recentDays: 90,   // latest-view window; "+90 days" button extends it
     minYear: null,
@@ -210,6 +212,7 @@
       '" title="' + (read ? "取消已读" : "标为已读") + '">' + (read ? "已读" : "标为已读") + "</button>" +
       '<div class="entry-title">' + esc(w.t) + '</div><div class="title-zh" hidden></div>' +
       '<div class="entry-meta"><span class="jtag"><span class="dot"></span>' + esc(journalName) + "</span>" +
+      (w._score != null ? '<span class="sem-score">相关度 ' + w._score.toFixed(2) + "</span>" : "") +
       "<span>" + esc(w.a.join(", ")) + "</span>" +
       (w.oa ? '<span class="' + oaCls + '">' + esc(oaLabel(w.oa)) + "</span>" : "") +
       '<button class="cite-btn" data-doi="' + esc(w.doi) + '" title="复制 APA 引文">APA</button>' +
@@ -240,6 +243,11 @@
   function passesFilters(w) {
     if (S.activeJournals && !S.activeJournals.has(w._slug)) return false;
     if (S.unreadOnly && isRead(w.doi)) return false;
+    if (S.query && S.yearRange) {
+      var age = new Date().getFullYear() - (parseInt((w.d || "").slice(0, 4), 10) || 0);
+      var yr = S.yearRange.split(":");
+      if (age < +yr[0] || age > +yr[1]) return false;
+    }
     if (S.query) {
       var hay;
       if (S.searchScope === "title") {
@@ -385,6 +393,7 @@
   });
 
   function renderLatest() {
+    S.semActive = false;
     var container = $("latest-list");
     container.innerHTML = '<div class="loading">正在加载题录…</div>';
     var cutoff = new Date();
@@ -1406,6 +1415,123 @@
     });
   }
 
+  /* ---------- semantic search (opt-in; bge-m3 title vectors stored in repo) ---------- */
+
+  function embQuery(text, key) {
+    return fetch("https://api.siliconflow.cn/v1/embeddings", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Authorization": "Bearer " + key },
+      body: JSON.stringify({ model: "BAAI/bge-m3", input: [text] })
+    }).then(function (r) {
+      if (!r.ok) throw new Error("HTTP " + r.status);
+      return r.json();
+    }).then(function (d) {
+      var v = d.data && d.data[0] && d.data[0].embedding;
+      if (!v) throw new Error("向量接口返回为空");
+      var norm = Math.sqrt(v.reduce(function (s, x) { return s + x * x; }, 0)) || 1;
+      return v.map(function (x) { return x / norm; });
+    });
+  }
+
+  function b64ToI8(b64) {
+    var s = atob(b64), a = new Int8Array(s.length);
+    for (var i = 0; i < s.length; i++) a[i] = (s.charCodeAt(i) << 24) >> 24;
+    return a;
+  }
+
+  function semScopePairs() {
+    // [(slug, year)] honouring the journal filter and the year-range selector
+    var cur = new Date().getFullYear();
+    var lo = 0, hi = 9999;
+    if (S.yearRange) { var p = S.yearRange.split(":"); lo = +p[0]; hi = +p[1]; }
+    var pairs = [];
+    S.manifest.journals.forEach(function (j) {
+      if (S.activeJournals && !S.activeJournals.has(j.slug)) return;
+      Object.keys(j.years || {}).forEach(function (y) {
+        var age = cur - (+y);
+        if (age >= lo && age <= hi) pairs.push([j.slug, y]);
+      });
+    });
+    return pairs;
+  }
+
+  function runSemantic() {
+    var q = S.query;
+    if (!q) { toast("先在搜索框输入查询词"); return; }
+    var cfg = trConfig();
+    if (!cfg.key || cfg.base.indexOf("siliconflow.cn") < 0) {
+      toast("语义搜索需要在「期刊管理」页配置硅基流动 Key");
+      return;
+    }
+    var btn = $("sem-btn");
+    btn.disabled = true;
+    var pairs = semScopePairs();
+    if (!pairs.length) { toast("当前筛选范围内没有数据"); btn.disabled = false; return; }
+    toast("正在理解查询语义…", true);
+    embQuery(q, cfg.key).then(function (qv) {
+      var dim = qv.length, scanned = 0, top = [], idx = 0;
+      var THRESH = 0.45, KEEP = 50;
+      function consider(slug, year, shard) {
+        var items = shard.items || {};
+        for (var doi in items) {
+          var v = b64ToI8(items[doi]);
+          if (v.length !== dim) continue;
+          var dot = 0, nv = 0;
+          for (var i = 0; i < dim; i++) { dot += qv[i] * v[i]; nv += v[i] * v[i]; }
+          // qv is unit-norm; v = 127 * unit vector  =>  cosine = dot / |v|
+          var score = dot / (Math.sqrt(nv) || 1);
+          scanned++;
+          if (score >= THRESH) top.push({ doi: doi, slug: slug, year: year, score: score });
+        }
+      }
+      function finish() {
+        top.sort(function (a, b) { return b.score - a.score; });
+        top = top.slice(0, KEEP);
+        var shardsNeeded = {};
+        top.forEach(function (r) { shardsNeeded[r.slug + "/" + r.year] = true; });
+        Promise.all(Object.keys(shardsNeeded).map(function (k) {
+          var p = k.split("/");
+          return loadShard(p[0], p[1]);
+        })).then(function () {
+          var jmap = {};
+          S.manifest.journals.forEach(function (j) { jmap[j.slug] = j.name; });
+          var html = '<div class="sem-banner">语义搜索：「' + esc(q) + '」 · 已扫描 ' +
+            scanned + ' 条标题 · 按相关度取前 ' + top.length +
+            ' 条 <button id="sem-exit">退出语义搜索</button></div>';
+          top.forEach(function (r) {
+            var shard = S.shardCache[r.slug + "/" + r.year] || [];
+            var w = shard.filter(function (x) { return x.doi === r.doi; })[0];
+            if (!w) return;
+            w._slug = r.slug;
+            w._j = jmap[r.slug] || "";
+            w._score = r.score;
+            S.workIndex[w.doi] = w;
+            html += entryHtml(w, w._j);
+          });
+          $("latest-list").innerHTML = html;
+          S.semActive = true;
+          $("stats").textContent = "语义搜索模式 · 退出后返回普通列表";
+          translateTitles($("latest-list"));
+          $("sem-exit").onclick = function () { renderLatest(); };
+          btn.disabled = false;
+          toast("语义搜索完成");
+        });
+      }
+      (function next() {
+        if (idx >= pairs.length) { finish(); return; }
+        var p = pairs[idx++];
+        toast("加载向量分片 " + idx + "/" + pairs.length + "…", true);
+        fetchJson("data/emb/" + p[0] + "/" + p[1] + ".json")
+          .then(function (shard) { consider(p[0], p[1], shard); })
+          .catch(function () { /* 该分片暂无向量，跳过 */ })
+          .then(function () { setTimeout(next, 0); });
+      })();
+    }).catch(function (e) {
+      btn.disabled = false;
+      toast("语义搜索失败：" + e.message);
+    });
+  }
+
   /* ---------- global event delegation ---------- */
 
   document.addEventListener("click", function (e) {
@@ -1551,6 +1677,11 @@
         S.searchScope = this.value;
         renderLatest(); renderArchive();
       });
+      $("search-years").addEventListener("change", function () {
+        S.yearRange = this.value;
+        renderLatest(); renderArchive();
+      });
+      $("sem-btn").addEventListener("click", runSemantic);
       $("unread-only").addEventListener("change", function () {
         S.unreadOnly = this.checked;
         renderLatest(); renderArchive();
