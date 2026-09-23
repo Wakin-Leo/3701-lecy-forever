@@ -44,7 +44,6 @@
     activeJournals: null,
     query: "",
     searchScope: "full",   // "full" = 标题+摘要+关键词+刊名；"title" = 仅标题
-    oaOnly: false,
     unreadOnly: false,
     recentDays: 90,   // latest-view window; "+90 days" button extends it
     minYear: null,
@@ -240,7 +239,6 @@
 
   function passesFilters(w) {
     if (S.activeJournals && !S.activeJournals.has(w._slug)) return false;
-    if (S.oaOnly && w.oa === "closed") return false;
     if (S.unreadOnly && isRead(w.doi)) return false;
     if (S.query) {
       var hay;
@@ -1551,10 +1549,6 @@
       });
       $("search-scope").addEventListener("change", function () {
         S.searchScope = this.value;
-        renderLatest(); renderArchive();
-      });
-      $("oa-only").addEventListener("change", function () {
-        S.oaOnly = this.checked;
         renderLatest(); renderArchive();
       });
       $("unread-only").addEventListener("change", function () {
