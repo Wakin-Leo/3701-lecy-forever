@@ -43,6 +43,7 @@
     favCat: null,     // active category filter in favs view
     activeJournals: null,
     query: "",
+    searchScope: "full",   // "full" = 标题+摘要+关键词+刊名；"title" = 仅标题
     oaOnly: false,
     unreadOnly: false,
     recentDays: 90,   // latest-view window; "+90 days" button extends it
@@ -242,10 +243,15 @@
     if (S.oaOnly && w.oa === "closed") return false;
     if (S.unreadOnly && isRead(w.doi)) return false;
     if (S.query) {
-      var jname = (S.jBySlug[w._slug] && S.jBySlug[w._slug].name) || w._j || w.j || "";
-      var flabel = FIELD_LABEL[JFIELD[w._slug] || "other"] || "";
-      var hay = (w.t + " " + (w.abs || "") + " " + (w.k || []).join(" ") +
-                 " " + jname + " " + flabel).toLowerCase();
+      var hay;
+      if (S.searchScope === "title") {
+        hay = String(w.t || "").toLowerCase();
+      } else {
+        var jname = (S.jBySlug[w._slug] && S.jBySlug[w._slug].name) || w._j || w.j || "";
+        var flabel = FIELD_LABEL[JFIELD[w._slug] || "other"] || "";
+        hay = (w.t + " " + (w.abs || "") + " " + (w.k || []).join(" ") +
+               " " + jname + " " + flabel).toLowerCase();
+      }
       if (hay.indexOf(S.query) < 0) return false;
     }
     return true;
@@ -1541,6 +1547,10 @@
       });
       $("search").addEventListener("input", function () {
         S.query = this.value.trim().toLowerCase();
+        renderLatest(); renderArchive();
+      });
+      $("search-scope").addEventListener("change", function () {
+        S.searchScope = this.value;
         renderLatest(); renderArchive();
       });
       $("oa-only").addEventListener("change", function () {
