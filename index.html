@@ -56,7 +56,7 @@
 
     <section id="view-latest" hidden>
       <div class="toolbar">
-        <input type="search" id="search" placeholder="搜索标题 / 摘要 / 关键词…">
+        <input type="search" id="search" placeholder="输入后点「搜索」或「语义搜索」，或按回车">
         <select id="search-scope" title="搜索范围">
           <option value="full">标题+摘要</option>
           <option value="title">仅标题</option>
@@ -71,6 +71,7 @@
           <option value="25:29">近 26–30 年</option>
           <option value="30:9999">31 年及以上</option>
         </select>
+        <button id="kw-btn" class="sem-btn" title="按关键词搜索当前筛选范围">搜索</button>
         <button id="sem-btn" class="sem-btn" title="用语义相似度搜索当前筛选范围（需硅基流动 Key）">语义搜索</button>
         <label class="oa-toggle"><input type="checkbox" id="unread-only"> 仅看未读</label>
       </div>

@@ -411,6 +411,7 @@ button.danger:hover { border-color: #a4362e; }
   border-radius: 5px; padding: 2px 8px; font-size: 11.5px; font-weight: 600;
   background: #f7efdd; color: #7a5c1e; border: 1px solid #e5d3ab;
 }
+.entry-date { font-weight: 600; color: var(--ink-soft); }
 
 /* ---------- today block ---------- */
 .today-block {

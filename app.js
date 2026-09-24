@@ -46,6 +46,7 @@
     searchScope: "full",   // "full" = 标题+摘要+关键词+刊名；"title" = 仅标题
     yearRange: "",         // "" 或 "lo:hi"（距今年数，仅搜索时生效）
     semActive: false,      // 语义搜索结果是否正占据着 latest 列表
+    mode: "browse",        // "browse" 浏览流（近90天）| "search" 搜索结果
     unreadOnly: false,
     recentDays: 90,   // latest-view window; "+90 days" button extends it
     minYear: null,
@@ -212,6 +213,7 @@
       '" title="' + (read ? "取消已读" : "标为已读") + '">' + (read ? "已读" : "标为已读") + "</button>" +
       '<div class="entry-title">' + esc(w.t) + '</div><div class="title-zh" hidden></div>' +
       '<div class="entry-meta"><span class="jtag"><span class="dot"></span>' + esc(journalName) + "</span>" +
+      (w._showDate ? '<span class="entry-date">' + esc(w.d) + "</span>" : "") +
       (w._score != null ? '<span class="sem-score">相关度 ' + w._score.toFixed(2) + "</span>" : "") +
       "<span>" + esc(w.a.join(", ")) + "</span>" +
       (w.oa ? '<span class="' + oaCls + '">' + esc(oaLabel(w.oa)) + "</span>" : "") +
@@ -229,6 +231,8 @@
     var html = "", lastDate = "";
     list.forEach(function (w) {
       w._j = journalMap[w._slug] || w.j || "";
+      w._showDate = false;
+      w._score = null;
       S.workIndex[w.doi] = w;
       if (w.d !== lastDate) {
         lastDate = w.d;
@@ -240,9 +244,10 @@
     translateTitles(container);
   }
 
-  function passesFilters(w) {
+  function passesFilters(w, ignoreQuery) {
     if (S.activeJournals && !S.activeJournals.has(w._slug)) return false;
     if (S.unreadOnly && isRead(w.doi)) return false;
+    if (ignoreQuery) return true;
     if (S.query && S.yearRange) {
       var age = new Date().getFullYear() - (parseInt((w.d || "").slice(0, 4), 10) || 0);
       var yr = S.yearRange.split(":");
@@ -394,6 +399,7 @@
 
   function renderLatest() {
     S.semActive = false;
+    S.mode = "browse";
     var container = $("latest-list");
     container.innerHTML = '<div class="loading">正在加载题录…</div>';
     var cutoff = new Date();
@@ -440,6 +446,8 @@
         var th = "";
         todayItems.forEach(function (w) {
           w._j = jmap[w._slug] || w.j || "";
+          w._showDate = false;
+          w._score = null;
           S.workIndex[w.doi] = w;
           th += entryHtml(w, w._j);
         });
@@ -505,7 +513,8 @@
     var jmap = {}; jmap[slug] = $("arc-journal").selectedOptions[0].textContent;
     loadShard(slug, year).then(function (d) {
       d.forEach(function (w) { w._slug = slug; });
-      renderGrouped(d.filter(passesFilters), container, jmap);
+      // 回溯页是浏览视图：不受搜索词/时间段影响
+      renderGrouped(d.filter(function (w) { return passesFilters(w, true); }), container, jmap);
     });
   }
 
@@ -1415,6 +1424,54 @@
     });
   }
 
+  /* ---------- keyword search (button-triggered; full corpus in scope) ---------- */
+
+  var SEARCH_CAP = 300;
+
+  function runKeywordSearch() {
+    var q = S.query;
+    if (!q) { toast("先在搜索框输入查询词"); return; }
+    var pairs = semScopePairs();   // 期刊筛选 + 时间段，与语义搜索同口径
+    if (!pairs.length) { toast("当前筛选范围内没有数据"); return; }
+    var btn = $("kw-btn");
+    btn.disabled = true;
+    var hits = [], scanned = 0, idx = 0;
+    function finish() {
+      hits.sort(function (a, b) { return a.d < b.d ? 1 : -1; });
+      var jmap = {};
+      S.manifest.journals.forEach(function (j) { jmap[j.slug] = j.name; });
+      var shown = hits.slice(0, SEARCH_CAP);
+      var html = '<div class="sem-banner">搜索：「' + esc(q) + '」 · 命中 ' + hits.length +
+        ' 条' + (hits.length > SEARCH_CAP ? "，按日期显示前 " + SEARCH_CAP + " 条" : "") +
+        ' <button id="sem-exit">退出搜索</button></div>';
+      shown.forEach(function (w) {
+        w._j = jmap[w._slug] || "";
+        w._showDate = true;
+        S.workIndex[w.doi] = w;
+        html += entryHtml(w, w._j);
+      });
+      $("latest-list").innerHTML = html;
+      S.mode = "search";
+      $("stats").textContent = "搜索模式 · 扫描 " + scanned + " 条 · 退出后返回浏览";
+      translateTitles($("latest-list"));
+      $("sem-exit").onclick = function () { renderLatest(); };
+      btn.disabled = false;
+      toast("搜索完成");
+    }
+    (function next() {
+      if (idx >= pairs.length) { finish(); return; }
+      var p = pairs[idx++];
+      if (idx % 10 === 1) toast("加载数据分片 " + idx + "/" + pairs.length + "…", true);
+      loadShard(p[0], p[1]).then(function (d) {
+        d.forEach(function (w) {
+          w._slug = p[0];
+          scanned++;
+          if (passesFilters(w)) hits.push(w);
+        });
+      }).then(function () { setTimeout(next, 0); });
+    })();
+  }
+
   /* ---------- semantic search (opt-in; bge-m3 title vectors stored in repo) ---------- */
 
   function embQuery(text, key) {
@@ -1505,6 +1562,7 @@
             w._slug = r.slug;
             w._j = jmap[r.slug] || "";
             w._score = r.score;
+            w._showDate = true;
             S.workIndex[w.doi] = w;
             html += entryHtml(w, w._j);
           });
@@ -1670,9 +1728,12 @@
         renderLatest();
       });
       $("search").addEventListener("input", function () {
-        S.query = this.value.trim().toLowerCase();
-        renderLatest(); renderArchive();
+        S.query = this.value.trim().toLowerCase();   // 仅记录，不触发搜索
       });
+      $("search").addEventListener("keydown", function (e) {
+        if (e.key === "Enter") { e.preventDefault(); runKeywordSearch(); }
+      });
+      $("kw-btn").addEventListener("click", runKeywordSearch);
       $("search-scope").addEventListener("change", function () {
         S.searchScope = this.value;
         renderLatest(); renderArchive();
