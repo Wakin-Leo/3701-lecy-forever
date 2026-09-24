@@ -1435,7 +1435,7 @@
     if (!pairs.length) { toast("当前筛选范围内没有数据"); return; }
     var btn = $("kw-btn");
     btn.disabled = true;
-    var hits = [], scanned = 0, idx = 0;
+    var hits = [], scanned = 0, idx = 0, done = 0;
     function finish() {
       hits.sort(function (a, b) { return a.d < b.d ? 1 : -1; });
       var jmap = {};
@@ -1458,18 +1458,23 @@
       btn.disabled = false;
       toast("搜索完成");
     }
-    (function next() {
-      if (idx >= pairs.length) { finish(); return; }
-      var p = pairs[idx++];
-      if (idx % 10 === 1) toast("加载数据分片 " + idx + "/" + pairs.length + "…", true);
-      loadShard(p[0], p[1]).then(function (d) {
-        d.forEach(function (w) {
-          w._slug = p[0];
-          scanned++;
-          if (passesFilters(w)) hits.push(w);
+    function worker() {
+      while (idx < pairs.length) {
+        var p = pairs[idx++];
+        loadShard(p[0], p[1]).then(function (d) {
+          d.forEach(function (w) {
+            w._slug = p[0];
+            scanned++;
+            if (passesFilters(w)) hits.push(w);
+          });
+        }).then(function () {
+          done++;
+          if (done % 10 === 0) toast("加载数据分片 " + done + "/" + pairs.length + "…", true);
+          if (done === pairs.length) finish(); else worker();
         });
-      }).then(function () { setTimeout(next, 0); });
-    })();
+      }
+    }
+    for (var k = 0; k < Math.min(6, pairs.length); k++) worker();
   }
 
   /* ---------- semantic search (opt-in; bge-m3 title vectors stored in repo) ---------- */
@@ -1575,15 +1580,21 @@
           toast("语义搜索完成");
         });
       }
-      (function next() {
-        if (idx >= pairs.length) { finish(); return; }
-        var p = pairs[idx++];
-        toast("加载向量分片 " + idx + "/" + pairs.length + "…", true);
-        fetchJson("data/emb/" + p[0] + "/" + p[1] + ".json")
-          .then(function (shard) { consider(p[0], p[1], shard); })
-          .catch(function () { /* 该分片暂无向量，跳过 */ })
-          .then(function () { setTimeout(next, 0); });
-      })();
+      var idx2 = 0, done2 = 0;
+      function worker() {
+        while (idx2 < pairs.length) {
+          var p = pairs[idx2++];
+          fetchJson("data/emb/" + p[0] + "/" + p[1] + ".json")
+            .then(function (shard) { consider(p[0], p[1], shard); })
+            .catch(function () { /* 该分片暂无向量，跳过 */ })
+            .then(function () {
+              done2++;
+              if (done2 % 10 === 0) toast("加载向量分片 " + done2 + "/" + pairs.length + "…", true);
+              if (done2 === pairs.length) finish(); else worker();
+            });
+        }
+      }
+      for (var k = 0; k < Math.min(6, pairs.length); k++) worker();
     }).catch(function (e) {
       btn.disabled = false;
       toast("语义搜索失败：" + e.message);
