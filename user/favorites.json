@@ -12,6 +12,31 @@
   ],
   "items": [
     {
+      "doi": "10.1111/puar.13784",
+      "t": "The effectiveness‐equity tradeoff when resources decline: Evidence from environmental policy implementation in the U.S. states",
+      "a": [
+        "Sanghee Park",
+        "Jiaqi Liang"
+      ],
+      "d": "2024-01-14",
+      "j": "Journal of Pragmatics",
+      "oa": "bronze",
+      "url": "https://onlinelibrary.wiley.com/doi/pdfdirect/10.1111/puar.13784",
+      "k": [
+        "Staffing",
+        "Equity (law)",
+        "Business",
+        "Prioritization",
+        "Public economics",
+        "Enforcement",
+        "Government (linguistics)",
+        "Economics"
+      ],
+      "abs": "Despite a voluminous literature on resource availability and the implications for organizational performance, little is known about how changes in government agencies' resources impact their policy implementation activities and goal prioritization. This article explores how changes in resources affect regulatory enforcement activities by types of resources and policy implementation activities, and whether resource cutbacks prompt a tradeoff of the effectiveness‐equity goals. Using the block‐group level data on the Clean Air Act (CAA) implementation from 2012 to 2019, we find that state environmental agencies prioritize regulatory effectiveness over environmental justice by concentrating their resources on communities where task demands correspond to organizations' core missions. They also promote social equity to some extent when facing spending cutbacks but not staffing cuts. Spending cutbacks had a less severe impact on compliance inspections for more socially vulnerable communities, while those exposed to more imminent environmental harms received more inspections.",
+      "cat": "trade-off设计",
+      "ts": "2026-09-26 03:04"
+    },
+    {
       "doi": "10.1111/padm.13041",
       "t": "Public Perceptions of the Administrative Values Tradeoff: Bureaucratic and Democratic Ethos",
       "a": [
