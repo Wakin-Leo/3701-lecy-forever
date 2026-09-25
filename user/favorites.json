@@ -7,9 +7,35 @@
     "性别",
     "话语政治",
     "话语与危机",
-    "历史制度主义"
+    "历史制度主义",
+    "trade-off设计"
   ],
   "items": [
+    {
+      "doi": "10.1111/padm.13041",
+      "t": "Public Perceptions of the Administrative Values Tradeoff: Bureaucratic and Democratic Ethos",
+      "a": [
+        "Suyeon Jo",
+        "Kenneth J. Meier"
+      ],
+      "d": "2024-10-24",
+      "j": "Journal of Pragmatics",
+      "oa": "hybrid",
+      "url": "https://onlinelibrary.wiley.com/doi/pdfdirect/10.1111/padm.13041",
+      "k": [
+        "Ethos",
+        "Bureaucracy",
+        "Democracy",
+        "Public administration",
+        "Perception",
+        "Political science",
+        "Law",
+        "Epistemology"
+      ],
+      "abs": "Scholarly debate over bureaucratic and democratic values has been one of the fundamental questions in the field of public administration. Despite a volume of theoretical discussions, we know little about how the general public cares about these two sets of administrative values in practice. This research fills the gap in the literature by investigating the public's views on four administrative values: effectiveness and efficiency, as well as equity and participation. We also test whether there is a tradeoff between bureaucratic and democratic values. We conducted a vignette experiment using the context of US nursing homes where different administrative values (effectiveness, efficiency, equity, and participation) serve as treatment manipulations. Our findings suggest that the public considers different values in assessing public organizations, and that they recognize the trade‐off between efficiency and participation. The study has broad implications for our understanding of ethical frameworks of public administration, namely bureaucratic and democratic ethos.",
+      "cat": "trade-off设计",
+      "ts": "2026-09-26 03:03"
+    },
     {
       "doi": "10.1007/s11077-026-09631-x",
       "t": "Public policymaking under uncertain time horizons: cyclicality, synchronization, and temporal delegation",
