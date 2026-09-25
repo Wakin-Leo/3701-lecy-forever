@@ -12,6 +12,32 @@
   ],
   "items": [
     {
+      "doi": "10.1111/puar.13690",
+      "t": "Effectiveness, efficiency, and equity tradeoffs in public programs: A citizen experiment",
+      "a": [
+        "Kenneth J. Meier",
+        "Jourdan Davis",
+        "Xiaoyang Xu"
+      ],
+      "d": "2023-06-21",
+      "j": "Journal of Pragmatics",
+      "oa": "hybrid",
+      "url": "https://onlinelibrary.wiley.com/doi/pdfdirect/10.1111/puar.13690",
+      "k": [
+        "Equity (law)",
+        "Vignette",
+        "Public economics",
+        "Economics",
+        "Test (biology)",
+        "Actuarial science",
+        "Equity theory",
+        "Political science"
+      ],
+      "abs": "Debates over public programs frequently focus on questions of effectiveness, equity, and efficiency and the tradeoff among these objectives. Missing from the literature is whether the general public cares about these tradeoffs, can perceive such differences, and will act on them. This article reports on two pre‐registered vignette experiments where the effectiveness, equity, and efficiency are assessed relative to experimental treatments focused on U.S. K‐12 education involving test scores, equality of test scores, and program costs. One experiment focuses on equity in race and the other on equity in income. The experiments show that the general public perceives differences in program effectiveness and equity, values both, and is unwilling to tradeoff one for the other. The public cares about program costs, but it lacks a sophisticated understanding of efficiency as a concept. Inequalities in income appear to influence equity concerns more than those involving race.",
+      "cat": "trade-off设计",
+      "ts": "2026-09-26 03:04"
+    },
+    {
       "doi": "10.1111/puar.13784",
       "t": "The effectiveness‐equity tradeoff when resources decline: Evidence from environmental policy implementation in the U.S. states",
       "a": [
