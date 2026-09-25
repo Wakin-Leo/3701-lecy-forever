@@ -1460,18 +1460,19 @@
     }
     function worker() {
       while (idx < pairs.length) {
-        var p = pairs[idx++];
-        loadShard(p[0], p[1]).then(function (d) {
-          d.forEach(function (w) {
-            w._slug = p[0];
-            scanned++;
-            if (passesFilters(w)) hits.push(w);
+        (function (p) {   // 立即绑定本迭代的分片，避免闭包共享变量
+          loadShard(p[0], p[1]).then(function (d) {
+            d.forEach(function (w) {
+              w._slug = p[0];
+              scanned++;
+              if (passesFilters(w)) hits.push(w);
+            });
+          }).then(function () {
+            done++;
+            if (done % 10 === 0) toast("加载数据分片 " + done + "/" + pairs.length + "…", true);
+            if (done === pairs.length) finish(); else worker();
           });
-        }).then(function () {
-          done++;
-          if (done % 10 === 0) toast("加载数据分片 " + done + "/" + pairs.length + "…", true);
-          if (done === pairs.length) finish(); else worker();
-        });
+        })(pairs[idx++]);
       }
     }
     for (var k = 0; k < Math.min(6, pairs.length); k++) worker();
@@ -1583,15 +1584,16 @@
       var idx2 = 0, done2 = 0;
       function worker() {
         while (idx2 < pairs.length) {
-          var p = pairs[idx2++];
-          fetchJson("data/emb/" + p[0] + "/" + p[1] + ".json")
-            .then(function (shard) { consider(p[0], p[1], shard); })
-            .catch(function () { /* 该分片暂无向量，跳过 */ })
-            .then(function () {
-              done2++;
-              if (done2 % 10 === 0) toast("加载向量分片 " + done2 + "/" + pairs.length + "…", true);
-              if (done2 === pairs.length) finish(); else worker();
-            });
+          (function (p) {   // 立即绑定本迭代的分片，避免闭包共享变量
+            fetchJson("data/emb/" + p[0] + "/" + p[1] + ".json")
+              .then(function (shard) { consider(p[0], p[1], shard); })
+              .catch(function () { /* 该分片暂无向量，跳过 */ })
+              .then(function () {
+                done2++;
+                if (done2 % 10 === 0) toast("加载向量分片 " + done2 + "/" + pairs.length + "…", true);
+                if (done2 === pairs.length) finish(); else worker();
+              });
+          })(pairs[idx2++]);
         }
       }
       for (var k = 0; k < Math.min(6, pairs.length); k++) worker();
