@@ -15,6 +15,7 @@
   var JFIELD = {
     "pub-admin": "pa", "par": "pa", "pmr": "pa", "governance": "pa", "jpart": "pa",
     "ppmg": "pa", "reg-gov": "pa", "policy-sci": "pa", "policy-politics": "pa",
+    "ppa": "pa", "policy-studies": "pa", "jpp": "pa", "rpr": "pa", "japp": "pa",
     "polcomm": "polisci", "polpsych": "polisci",
     "jesp": "psych",
     "das": "ling", "jlp": "ling", "appl-ling": "ling", "ling-typ": "ling",

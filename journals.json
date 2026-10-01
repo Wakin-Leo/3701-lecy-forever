@@ -28,6 +28,11 @@
     { "slug": "soc-sem",    "name": "Social Semiotics",                                   "issns": ["1035-0330", "1470-1219"], "publisher": "Routledge" },
     { "slug": "jccm",       "name": "Journal of Contingencies and Crisis Management",     "issns": ["0966-0879", "1468-5973"], "publisher": "Wiley" },
     { "slug": "risk-anal",  "name": "Risk Analysis",                                      "issns": ["0272-4332", "1539-6924"], "publisher": "Wiley" },
-    { "slug": "j-prag",     "name": "Journal of Pragmatics",                              "issns": ["0378-2166", "1879-1387"], "publisher": "Elsevier" }
+    { "slug": "j-prag",     "name": "Journal of Pragmatics",                              "issns": ["0378-2166", "1879-1387"], "publisher": "Elsevier" },
+    { "slug": "ppa",        "name": "Public Policy and Administration",                   "issns": ["0952-0767", "1749-4192"], "publisher": "SAGE" },
+    { "slug": "policy-studies", "name": "Policy Studies",                                 "issns": ["0144-2872", "1470-1006"], "publisher": "Taylor & Francis" },
+    { "slug": "jpp",        "name": "Journal of Public Policy",                           "issns": ["0143-814X", "1469-7815"], "publisher": "Cambridge University Press" },
+    { "slug": "rpr",        "name": "Review of Policy Research",                          "issns": ["1541-132X", "1541-1338"], "publisher": "Wiley" },
+    { "slug": "japp",       "name": "Journal of Asian Public Policy",                     "issns": ["1751-6234", "1751-6242"], "publisher": "Taylor & Francis" }
   ]
 }
