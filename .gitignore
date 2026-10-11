@@ -1,0 +1,14 @@
+# Local tools, caches, credentials and recovery files must stay outside publication.
+__pycache__/
+*.py[cod]
+.venv/
+node_modules/
+.env
+.env.*
+!.env.example
+backups/
+work/
+*.bundle
+*.log
+.DS_Store
+Thumbs.db
