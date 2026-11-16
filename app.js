@@ -1388,8 +1388,12 @@
     var box = entry.querySelector(".abs-zh");
     var w = S.workIndex[entry.dataset.doi];
     if (!w) return;
-    if (!isRead(entry.dataset.doi)) setRead(entry.dataset.doi, true);
-    if (w._zh) { box.hidden = !box.hidden; btn.textContent = box.hidden ? "翻译摘要" : "收起译文"; return; }
+    if (w._zh) {
+      box.hidden = !box.hidden;
+      btn.textContent = box.hidden ? "翻译摘要" : "收起译文";
+      if (!box.hidden && !isRead(entry.dataset.doi)) setRead(entry.dataset.doi, true);
+      return;
+    }
     var cfg = trConfig();
     if (!cfg.key) {
       btn.textContent = "请先在「期刊管理」页配置翻译 Key";
@@ -1404,7 +1408,7 @@
       "3. 中文保持学术语气、术语准确；每句中文里最多挑选 2 个专业术语，在译文中以「中文（English）」的形式括注英文原词——括注必须紧跟在对应中文术语之后，不要放到句末；示例：「街头官僚（street-level bureaucrats）拥有自由裁量权」是正确的，「街头官僚拥有自由裁量权（street-level bureaucrats）」是错误的；若译文直接保留了英文原词（如 EFL），则无需再括注；每句绝不超过 2 个括注，宁可不注也不要超过，不要额外列术语表；\n" +
       "4. 不要翻译标题，不要在译文中重复「Abstract/摘要」字样，不要输出任何解释或其他内容。\n\n" +
       (w.abs || "");
-    trChat(cfg, prompt).then(function (text) {
+    return trChat(cfg, prompt).then(function (text) {
       var pairs = parseInterleaved(text);
       if (pairs.length) {
         w._zh = pairs.map(function (pr) {
@@ -1417,6 +1421,7 @@
       }
       box.hidden = false;
       btn.textContent = "收起译文";
+      if (!isRead(entry.dataset.doi)) setRead(entry.dataset.doi, true);
     }).catch(function (e) {
       btn.textContent = "翻译失败：" + e.message;
       setTimeout(function () { btn.textContent = "翻译摘要"; }, 3000);
@@ -1429,6 +1434,23 @@
 
   var SEARCH_CAP = 300;
 
+  // Each worker waits for its current shard before taking another one.
+  function loadSearchPairs(pairs, visit, onProgress) {
+    var next = 0, done = 0;
+    function worker() {
+      if (next >= pairs.length) return Promise.resolve();
+      var pair = pairs[next++];
+      return Promise.resolve().then(function () { return visit(pair); }).then(function () {
+        done++;
+        if (onProgress) onProgress(done, pairs.length);
+        return worker();
+      });
+    }
+    var workers = [];
+    for (var i = 0; i < Math.min(6, pairs.length); i++) workers.push(worker());
+    return Promise.all(workers);
+  }
+
   function runKeywordSearch() {
     var q = S.query;
     if (!q) { toast("先在搜索框输入查询词"); return; }
@@ -1436,7 +1458,7 @@
     if (!pairs.length) { toast("当前筛选范围内没有数据"); return; }
     var btn = $("kw-btn");
     btn.disabled = true;
-    var hits = [], scanned = 0, idx = 0, done = 0;
+    var hits = [], scanned = 0;
     function finish() {
       hits.sort(function (a, b) { return a.d < b.d ? 1 : -1; });
       var jmap = {};
@@ -1459,24 +1481,20 @@
       btn.disabled = false;
       toast("搜索完成");
     }
-    function worker() {
-      while (idx < pairs.length) {
-        (function (p) {   // 立即绑定本迭代的分片，避免闭包共享变量
-          loadShard(p[0], p[1]).then(function (d) {
-            d.forEach(function (w) {
-              w._slug = p[0];
-              scanned++;
-              if (passesFilters(w)) hits.push(w);
-            });
-          }).then(function () {
-            done++;
-            if (done % 10 === 0) toast("加载数据分片 " + done + "/" + pairs.length + "…", true);
-            if (done === pairs.length) finish(); else worker();
-          });
-        })(pairs[idx++]);
-      }
-    }
-    for (var k = 0; k < Math.min(6, pairs.length); k++) worker();
+    return loadSearchPairs(pairs, function (p) {
+      return loadShard(p[0], p[1]).then(function (d) {
+        d.forEach(function (w) {
+          w._slug = p[0];
+          scanned++;
+          if (passesFilters(w)) hits.push(w);
+        });
+      });
+    }, function (done, total) {
+      if (done % 10 === 0) toast("加载数据分片 " + done + "/" + total + "…", true);
+    }).then(finish).catch(function (e) {
+      btn.disabled = false;
+      toast("搜索失败：" + e.message);
+    });
   }
 
   /* ---------- semantic search (opt-in; bge-m3 title vectors stored in repo) ---------- */
@@ -1532,8 +1550,8 @@
     var pairs = semScopePairs();
     if (!pairs.length) { toast("当前筛选范围内没有数据"); btn.disabled = false; return; }
     toast("正在理解查询语义…", true);
-    embQuery(q, cfg.key).then(function (qv) {
-      var dim = qv.length, scanned = 0, top = [], idx = 0;
+    return embQuery(q, cfg.key).then(function (qv) {
+      var dim = qv.length, scanned = 0, top = [];
       var THRESH = 0.45, KEEP = 50;
       function consider(slug, year, shard) {
         var items = shard.items || {};
@@ -1545,34 +1563,40 @@
           // qv is unit-norm; v = 127 * unit vector  =>  cosine = dot / |v|
           var score = dot / (Math.sqrt(nv) || 1);
           scanned++;
-          if (score >= THRESH) top.push({ doi: doi, slug: slug, year: year, score: score });
+          if (score >= THRESH && (!S.unreadOnly || !isRead(doi))) {
+            top.push({ doi: doi, slug: slug, year: year, score: score });
+          }
         }
       }
       function finish() {
+        top = top.filter(function (r) { return !S.unreadOnly || !isRead(r.doi); });
         top.sort(function (a, b) { return b.score - a.score; });
         top = top.slice(0, KEEP);
         var shardsNeeded = {};
         top.forEach(function (r) { shardsNeeded[r.slug + "/" + r.year] = true; });
-        Promise.all(Object.keys(shardsNeeded).map(function (k) {
+        return loadSearchPairs(Object.keys(shardsNeeded), function (k) {
           var p = k.split("/");
           return loadShard(p[0], p[1]);
-        })).then(function () {
+        }).then(function () {
           var jmap = {};
           S.manifest.journals.forEach(function (j) { jmap[j.slug] = j.name; });
-          var html = '<div class="sem-banner">语义搜索：「' + esc(q) + '」 · 已扫描 ' +
-            scanned + ' 条标题 · 按相关度取前 ' + top.length +
-            ' 条 <button id="sem-exit">退出语义搜索</button></div>';
+          var entries = "", shown = 0;
           top.forEach(function (r) {
             var shard = S.shardCache[r.slug + "/" + r.year] || [];
             var w = shard.filter(function (x) { return x.doi === r.doi; })[0];
             if (!w) return;
             w._slug = r.slug;
+            if (!passesFilters(w, true)) return;
             w._j = jmap[r.slug] || "";
             w._score = r.score;
             w._showDate = true;
             S.workIndex[w.doi] = w;
-            html += entryHtml(w, w._j);
+            entries += entryHtml(w, w._j);
+            shown++;
           });
+          var html = '<div class="sem-banner">语义搜索：「' + esc(q) + '」 · 已扫描 ' +
+            scanned + ' 条标题 · 按相关度取前 ' + shown +
+            ' 条 <button id="sem-exit">退出语义搜索</button></div>' + entries;
           $("latest-list").innerHTML = html;
           S.semActive = true;
           $("stats").textContent = "语义搜索模式 · 退出后返回普通列表";
@@ -1582,22 +1606,13 @@
           toast("语义搜索完成");
         });
       }
-      var idx2 = 0, done2 = 0;
-      function worker() {
-        while (idx2 < pairs.length) {
-          (function (p) {   // 立即绑定本迭代的分片，避免闭包共享变量
-            fetchJson("data/emb/" + p[0] + "/" + p[1] + ".json")
-              .then(function (shard) { consider(p[0], p[1], shard); })
-              .catch(function () { /* 该分片暂无向量，跳过 */ })
-              .then(function () {
-                done2++;
-                if (done2 % 10 === 0) toast("加载向量分片 " + done2 + "/" + pairs.length + "…", true);
-                if (done2 === pairs.length) finish(); else worker();
-              });
-          })(pairs[idx2++]);
-        }
-      }
-      for (var k = 0; k < Math.min(6, pairs.length); k++) worker();
+      return loadSearchPairs(pairs, function (p) {
+        return fetchJson("data/emb/" + p[0] + "/" + p[1] + ".json")
+          .then(function (shard) { consider(p[0], p[1], shard); })
+          .catch(function () { /* 该分片暂无向量，跳过 */ });
+      }, function (done, total) {
+        if (done % 10 === 0) toast("加载向量分片 " + done + "/" + total + "…", true);
+      }).then(finish);
     }).catch(function (e) {
       btn.disabled = false;
       toast("语义搜索失败：" + e.message);
